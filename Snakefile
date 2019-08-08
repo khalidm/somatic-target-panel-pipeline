@@ -1105,11 +1105,9 @@ rule vardict:
     -S 2 \
     -E 3 \
     -g 4 \
-    | awk 'NR!=1' \
-    | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
-    | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} \
     {input.bed} \
-    > {output}"
+    | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
+    | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} > {output}"
 
 #msi sensor
 rule msisensor_prep:
