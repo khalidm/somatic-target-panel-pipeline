@@ -1093,8 +1093,7 @@ rule vardict:
     cores=cluster["vardict"]["n"],
     # mem=cluster["mem"]["n"]
   shell:
-  """
-    tools/VarDict-{config[vardict_version]}/bin/VarDict \
+    "tools/VarDict-{config[vardict_version]}/bin/VarDict \
     -h \
     -G {config[reference]} \
     -f {config[af_threshold]} \
@@ -1108,8 +1107,7 @@ rule vardict:
     | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
     | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} \
     {input.bed} \
-    > {output}
-  """
+    > {output}"
 
 #msi sensor
 rule msisensor_prep:
