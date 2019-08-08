@@ -1132,7 +1132,7 @@ rule msisensor:
   params:
     tumour="{tumour}",
   shell:
-    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux msi -d {input.microsatellites} -n {input.bams[1]} -t {input.bams[0]} -e {input.bed     } -o tmp/{params.tumour}.msisensor && "
+    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux msi -d {input.microsatellites} -n {input.bams[1]} -t {input.bams[0]} -e {input.bed} -o tmp/{params.tumour}.msisensor && "
     "mv tmp/{params.tumour}.msisensor out/{params.tumour}.msisensor.tsv"
 
 rule msisensor_combine:
