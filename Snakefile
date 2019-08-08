@@ -54,6 +54,9 @@ rule all:
     expand("out/{tumour}.mutect2.filter.norm.af.dp.filter.vep.vcf.gz", tumour=config['tumours']),
     expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
+    # msi
+    "out/aggregate/msisensor.tsv",
+
     # combined results
     "out/aggregate/mutect2.genes_of_interest.combined.tsv",
     "out/aggregate/mutect2.combined.tsv",
@@ -1120,6 +1123,40 @@ rule filter_genes_of_interest_tumour:
     "src/vcf2tsv.py {input.vcf} | "
     "src/extract_vep.py --header 'Consequence|IMPACT|Codons|Amino_acids|Gene|SYMBOL|Feature|EXON|PolyPhen|SIFT|Protein_position|BIOTYPE|HGVSc|HGVSp|cDNA_position|CDS_position|HGVSc|HGVSp|cDNA_position|CDS_position|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|MaxEntScan_alt|MaxEntScan_diff|MaxEntScan_ref|PICK' | "
     "src/filter_tsv.py --column vep_SYMBOL --values {params.gene_list} > {output}"
+
+#msi sensor
+rule msisensor_prep:
+  input:
+    reference=config["genome"]
+  output:
+    "out/msisensor.list"
+  log:
+    stderr="log/msisensor.list.log"
+  shell:
+    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux scan -d {input.reference} -o {output}"
+
+rule msisensor:
+  input:
+    microsatellites="out/msisensor.list",
+    bed=config["regions"],
+    bams=tumour_germline_bams
+  output:
+    "out/{tumour}.msisensor.tsv"
+  log:
+    stderr="log/{tumour}.msisenser.stderr"
+  params:
+    tumour="{tumour}",
+  shell:
+    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux msi -d {input.microsatellites} -n {input.bams[1]} -t {input.bams[0]} -e {input.bed     } -o tmp/{params.tumour}.msisensor && "
+    "mv tmp/{params.tumour}.msisensor out/{params.tumour}.msisensor.tsv"
+
+rule msisensor_combine:
+  input:
+    expand("out/{tumour}.msisensor.tsv", tumour=config['tumours']),
+  output:
+    "out/aggregate/msisensor.tsv"
+  shell:
+    "src/combine_msisensor.py {input} > {output}"
 
 # mutational signatures
 rule mutational_signature:
