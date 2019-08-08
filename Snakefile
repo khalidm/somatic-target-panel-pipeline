@@ -780,49 +780,6 @@ rule mutect2_filter:
 #    "tools/gatk-4.1.2.0/gatk CalculateContamination -I tmp/{wildcards.tumour}.mutect2.pileup.table -O tmp/{wildcards.tumour}.mutect2.contamination.table && "
 #    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table tmp/{wildcards.tumour}.mutect2.contamination.table -O {output}) 1>{log.stdout} 2>{log.stderr}"
 
-
-
-
-
-
-
-### germline variant calling ###
-#rule filter_strelka_germline:
-#  input:
-#    "out/{germline}.strelka.germline.vcf.gz",
-#  output:
-#    "out/{germline}.strelka.germline.filter_gt.vcf.gz",
-#  shell:
-#    "{config[module_htslib]} && "
-#    "gunzip < {input} | grep -v NoPassedVariantGTs | bgzip > {output}"
-#
-#rule strelka_germline:
-#  input:
-#    reference=config["genome"],
-#    bam="out/{germline}.sorted.dups.bam"
-#
-#  output:
-#    "out/{germline}.strelka.germline.vcf.gz",
-#    "out/{germline}.strelka.germline.vcf.gz.tbi"
-#
-#  log:
-#    "log/{germline}.strelka.germline.log"
-#
-#  params:
-#    cores=cluster["strelka_germline"]["n"]
-#
-#  shell:
-#    "(mkdir -p tmp/strelka_{wildcards.germline}_$$ && "
-#    "tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaGermlineWorkflow.py "
-#    "--referenceFasta {input.reference} "
-#    "--bam {input.bam} "
-#    "--runDir tmp/strelka_{wildcards.germline}_$$ "
-#    "--exome && "
-#    "tmp/strelka_{wildcards.germline}_$$/runWorkflow.py -m local -j {params.cores} && "
-#    "mv tmp/strelka_{wildcards.germline}_$$/results/variants/variants.vcf.gz {output[0]} && "
-#    "mv tmp/strelka_{wildcards.germline}_$$/results/variants/variants.vcf.gz.tbi {output[1]} && "
-#    "rm -r tmp/strelka_{wildcards.germline}_$$ ) 2>{log}"
-
 ### platypus ###
 rule platypus_somatic:
   input:
@@ -1123,6 +1080,37 @@ rule filter_genes_of_interest_tumour:
     "src/vcf2tsv.py {input.vcf} | "
     "src/extract_vep.py --header 'Consequence|IMPACT|Codons|Amino_acids|Gene|SYMBOL|Feature|EXON|PolyPhen|SIFT|Protein_position|BIOTYPE|HGVSc|HGVSp|cDNA_position|CDS_position|HGVSc|HGVSp|cDNA_position|CDS_position|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|MaxEntScan_alt|MaxEntScan_diff|MaxEntScan_ref|PICK' | "
     "src/filter_tsv.py --column vep_SYMBOL --values {params.gene_list} > {output}"
+
+#VarDict
+rule vardict:
+  input:
+    bams=tumour_germline_bams,
+    tumor=config["tumour"],
+    normal=config["normal"],
+    interval=rules.genome_interval.output
+  output:
+    "out/{tumour}.mutect2.filter.genes_of_interest.tsv"
+  params:
+    cores=cluster["vardict"]["n"],
+    mem=cluster["mem"]["n"]
+  shell:
+  """
+    tools/VarDict-{config[vardict_version]}/bin/VarDict \
+    -h \
+    -G {config[reference]} \
+    -f {config[af_threshold]} \
+    -b '{input.bams[1]}|{input.bams[0]}' \
+    -Q 1 \
+    -c 1 \
+    -S 2 \
+    -E 3 \
+    -g 4 \
+    | awk 'NR!=1' \
+    | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
+    | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} \
+    {input.interval} \
+    > {output}
+  """
 
 #msi sensor
 rule msisensor_prep:
