@@ -1085,14 +1085,13 @@ rule filter_genes_of_interest_tumour:
 rule vardict:
   input:
     bams=tumour_germline_bams,
-    tumor=config["tumour"],
-    normal=config["normal"],
-    interval=rules.genome_interval.output
+    bed=config["regions"]
+    # interval=rules.genome_interval.output
   output:
-    "out/{tumour}.mutect2.filter.genes_of_interest.tsv"
+    "out/{tumour}.vardict.vcf"
   params:
     cores=cluster["vardict"]["n"],
-    mem=cluster["mem"]["n"]
+    # mem=cluster["mem"]["n"]
   shell:
   """
     tools/VarDict-{config[vardict_version]}/bin/VarDict \
@@ -1108,7 +1107,7 @@ rule vardict:
     | awk 'NR!=1' \
     | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
     | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} \
-    {input.interval} \
+    {input.bed} \
     > {output}
   """
 
