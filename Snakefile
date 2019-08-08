@@ -132,6 +132,15 @@ rule fastqc:
     "tools/FastQC/fastqc --extract --outdir out/fastqc/{wildcards.sample} {input.fastqs} && "
     "touch {output}"
 
+rule mosdepth:
+  input:
+    #fastqs=lambda wildcards: config["samples"][wildcards.sample]
+    bam="out/{sample}.sorted.dups.bam"
+  output:
+    "out/mosdepth/{sample}"
+  shell:
+    "tools/mosdepth --by {input.regions} --thresholds 10,50,100,150,200,500,1000 {output} {input.bam}"
+
 rule make_sequence_dict:
   input:
     reference=config["genome"]
@@ -1097,7 +1106,7 @@ rule vardict:
   shell:
     "tools/VarDict-{config[vardict_version]}/bin/VarDict \
     -h \
-    -G {intput.reference} \
+    -G {input.reference} \
     -f {config[af_threshold]} \
     -b '{input.bams[1]}|{input.bams[0]}' \
     -Q 1 \
