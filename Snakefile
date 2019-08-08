@@ -42,6 +42,7 @@ def germline_sample(wildcards):
 ### final outputs ###
 rule all:
   input:
+    expand("out/{tumour}.vardict.vcf", tumour=config['tumours']),
     expand("out/{tumour}.strelka.somatic.snvs.af.dp.filtered.vep.vcf.gz", tumour=config['tumours']), # somatic snvs strelka
     expand("out/{tumour}.strelka.somatic.indels.af.dp.filtered.vep.vcf.gz", tumour=config['tumours']), # somatic indels strelka
     expand("out/{sample}.oxo_metrics.txt", sample=config['samples']),
@@ -1084,6 +1085,7 @@ rule filter_genes_of_interest_tumour:
 #VarDict
 rule vardict:
   input:
+    reference=config["genome"],
     bams=tumour_germline_bams,
     bed=config["regions"]
     # interval=rules.genome_interval.output
@@ -1095,7 +1097,7 @@ rule vardict:
   shell:
     "tools/VarDict-{config[vardict_version]}/bin/VarDict \
     -h \
-    -G {config[reference]} \
+    -G {intput.reference} \
     -f {config[af_threshold]} \
     -b '{input.bams[1]}|{input.bams[0]}' \
     -Q 1 \
