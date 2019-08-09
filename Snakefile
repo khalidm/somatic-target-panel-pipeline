@@ -239,11 +239,12 @@ rule mosdepth:
     bam="out/{sample}.sorted.dups.bam",
     bed=config["regions"]
   output:
-    "out/mosdepth/{sample}"
+    "out/mosdepth/{sample}.mosdepth.completed"
+  params:
+    prefix="out/mosdepth/{sample}"
   shell:
-    "mkdir -p out/mosdepth && "
-    "tools/mosdepth --by {input.bed} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
-    "touch {output}.mosdepth.completed"
+    "tools/mosdepth --by {input.bed} -n --quantize --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
+    "touch {output}"
 
 rule multiqc:
   input:
