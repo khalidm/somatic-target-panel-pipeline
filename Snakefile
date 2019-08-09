@@ -725,8 +725,8 @@ rule mutect2_somatic_chr:
     germline=lambda wildcards: config["tumours"][wildcards.tumour]
   shell:
     "{config[module_java]} && "
-    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
-    #"tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --output-mode EMIT_VARIANTS_ONLY --dbsnp {input.dbsnp} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
+    # "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
+    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
 
 # run mutect without pon
 rule mutect2_somatic_no_pon:
@@ -1124,9 +1124,7 @@ rule vardict:
     -E 3 \
     -g 4 \
     -th {params.cores} \
-    {input.bed} \
-    | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
-    | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} > {output}"
+    {input.bed} | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} > {output}"
 
 #msi sensor
 rule msisensor_prep:
