@@ -254,8 +254,7 @@ rule multiqc:
     expand("out/{tumour}.contamination", tumour=config['tumours']), # TODO
     #expand("out/{tumour}.verifybamid.somatic.completed", tumour=config['tumours']),
     expand("out/{sample}.depth_of_coverage.sample_summary", sample=config['samples']),
-    expand("out/mosdepth/{sample}.mosdepth.global.dist.txt", sample=config['samples']),
-    expand("out/mosdepth/{sample}.mosdepth.region.dist.txt", sample=config['samples']),
+    expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']),
     "out/aggregate/qc.summary.tsv"
 
   output:
