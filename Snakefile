@@ -54,7 +54,7 @@ rule all:
     expand("out/{sample}.metrics.alignment", sample=config['samples']),
     expand("out/{sample}.metrics.target", sample=config['samples']),
     expand("out/{tumour}.mutect2.filter.norm.af.dp.filter.vep.vcf.gz", tumour=config['tumours']),
-    expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
+    # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
     # msi
     "out/aggregate/msisensor.tsv",
@@ -1111,6 +1111,8 @@ rule vardict:
     cores=cluster["vardict"]["n"],
     # mem=cluster["mem"]["n"]
   shell:
+    "{config[module_R]} && "
+    "{config[module_java]} && "
     "tools/VarDict-{config[vardict_version]}/bin/VarDict \
     -h \
     -G {input.reference} \
