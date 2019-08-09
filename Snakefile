@@ -49,13 +49,7 @@ rule all:
     expand("out/{sample}.artifact_metrics.txt.error_summary_metrics", sample=config['samples']),
     expand("out/{tumour}.mutect2.filter.bias.vcf.gz", tumour=config['tumours']), # somatic mutect2 with dkfz bias annotation
     expand("out/fastqc/{sample}/completed", sample=config['samples']), # fastqc
-    expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']), # fastqc
-    # expand("out/mosdepth/{sample}.mosdepth.global.dist.txt", sample=config['samples']), # mosdepth
-    # expand("out/mosdepth/{sample}.mosdepth.summary.txt", sample=config['samples']), # mosdepth
-    # expand("out/mosdepth/{sample}.mosdepth.region.dist.txt", sample=config['samples']), # mosdepth
-    # expand("out/mosdepth/{sample}.regions.bed.gz", sample=config['samples']), # mosdepth
-    # expand("out/mosdepth/{sample}.quantized.bed.gz", sample=config['samples']), # mosdepth
-    # expand("out/mosdepth/{sample}.thresholds.bed.gz", sample=config['samples']), # mosdepth
+    expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
     expand("out/{sample}.metrics.insertsize", sample=config['samples']),
     expand("out/{sample}.metrics.alignment", sample=config['samples']),
     expand("out/{sample}.metrics.target", sample=config['samples']),
