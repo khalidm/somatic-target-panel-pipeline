@@ -1123,6 +1123,7 @@ rule vardict:
     -S 2 \
     -E 3 \
     -g 4 \
+    -th {params.cores} \
     {input.bed} \
     | tools/VarDict-{config[vardict_version]}/bin/testsomatic.R \
     | tools/VarDict-{config[vardict_version]}/bin/var2vcf_paired.pl -N 'TUMOR|NORMAL' -f {config[af_threshold]} > {output}"
