@@ -236,11 +236,12 @@ rule qc_depth_of_coverage:
 rule mosdepth:
   input:
     #fastqs=lambda wildcards: config["samples"][wildcards.sample]
-    bam="out/{sample}.sorted.dups.bam"
+    bam="out/{sample}.sorted.dups.bam",
+    bed=config["regions"]
   output:
     "out/mosdepth/{sample}"
   shell:
-    "tools/mosdepth --by {input.regions} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
+    "tools/mosdepth --by {input.bed} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
     "touch {output}.mosdepth.completed"
 
 rule multiqc:
@@ -1257,36 +1258,6 @@ rule combine_mutational_signatures_filtered_v3:
     "src/combine_tsv.py {input.dbs2} | sed 's/^out\\/\\(.*\)\\.mutational_signature_v3_dbs\\.exposures/\\1/' >{output.dbs2} && "
     "src/combine_tsv.py {input.id} | sed 's/^out\\/\\(.*\)\\.mutational_signature_v3_id\\.exposures/\\1/' >{output.id} && "
     "src/combine_tsv.py {input.id2} | sed 's/^out\\/\\(.*\)\\.mutational_signature_v3_id_strelka\\.filter\\.exposures/\\1/' >{output.id2}"
-
-
-# copy number
-# rule copy_number_varscan:
-#   input:
-#     bams=tumour_germline_bams,
-#     reference=config["genome"]
-#   output:
-#     "out/{tumour}.varscan.copynumber.called"
-#   params:
-#     tumour="{tumour}"
-#   shell:
-#     "{config[module_java]} && "
-#     "{config[module_samtools]} && "
-#     "samtools mpileup -q 1 -f {input.reference} {input.bams[1]} {input.bams[0]} > tmp/{params.tumour}.mpileups && "
-#     "java -jar tools/VarScan.v2.3.9.jar copynumber tmp/{params.tumour}.mpileups out/{params.tumour}.varscan --mpileup 1 && "
-#     "java -jar tools/VarScan.v2.3.9.jar copyCaller out/{params.tumour}.varscan.copynumber --output-file {output}"
-#
-# rule copy_number_varscan_post:
-#   input:
-#     "out/{tumour}.varscan.copynumber.called"
-#   output:
-#     "out/{tumour}.varscan.copynumber.deletions.bed"
-#   params:
-#     tumour="{tumour}"
-#   shell:
-#     "{config[module_network]} && {config[module_R]} && "
-#     "sed '1d' < {input} > tmp/{params.tumour}.varscan.nohead && "
-#     "src/varscan_cnv_post.R --in tmp/{params.tumour}.varscan.nohead --out out/{params.tumour}.varscan.merged && " # 1       13360   16851   10      0.7773
-#     "awk -v OFS='\t' '{{ if ($5 < -0.1) {{len=$3-$2; print $1, $2, $3, \"logR=\" $5 \";length=\" len \";markers=\" $4}} }}' < out/{params.tumour}.varscan.merged > {output}"
 
 # burden (currently only exonic snvs)
 rule mutation_burden:
