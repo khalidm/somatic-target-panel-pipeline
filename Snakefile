@@ -133,16 +133,6 @@ rule fastqc:
     "tools/FastQC/fastqc --extract --outdir out/fastqc/{wildcards.sample} {input.fastqs} && "
     "touch {output}"
 
-rule mosdepth:
-  input:
-    #fastqs=lambda wildcards: config["samples"][wildcards.sample]
-    bam="out/{sample}.sorted.dups.bam"
-  output:
-    "out/mosdepth/{sample}"
-  shell:
-    "tools/mosdepth --by {input.regions} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
-    "touch {output}.mosdepth.completed"
-
 rule make_sequence_dict:
   input:
     reference=config["genome"]
@@ -242,6 +232,16 @@ rule qc_depth_of_coverage:
     "{config[module_java]} && "
     "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T DepthOfCoverage -R {input.reference} -o {params.prefix} -I {input.bam} -L {input.bed} && rm {params.prefix} "
     "2>{log}"
+
+rule mosdepth:
+  input:
+    #fastqs=lambda wildcards: config["samples"][wildcards.sample]
+    bam="out/{sample}.sorted.dups.bam"
+  output:
+    "out/mosdepth/{sample}"
+  shell:
+    "tools/mosdepth --by {input.regions} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
+    "touch {output}.mosdepth.completed"
 
 rule multiqc:
   input:
