@@ -241,6 +241,7 @@ rule mosdepth:
   output:
     "out/mosdepth/{sample}"
   shell:
+    "mkdir -p out/mosdepth && "
     "tools/mosdepth --by {input.bed} -n --quantize --thresholds 10,50,100,150,200,500,1000 {output} {input.bam} && "
     "touch {output}.mosdepth.completed"
 
