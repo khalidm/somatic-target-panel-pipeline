@@ -740,15 +740,17 @@ rule mutect2_filter:
     regions_chr=config["regions_name"] + "_{chromosome}.bed",
     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz"
   output:
-    "out/{tumour}.{chromosome}.mutect2.filter.vcf.gz"
+    pileup="tmp/{wildcards.tumour}.{chromosome}.mutect2.pileup.table",
+    contamination="tmp/{wildcards.tumour}.{chromosome}.mutect2.contamination.table",
+    vcf="out/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
   log:
-    stderr="log/{tumour}.mutect2-filter.stderr",
-    stdout="log/{tumour}.mutect2-filter.stdout"
+    stderr="log/{tumour}.{chromosome}.mutect2-filter.stderr",
+    stdout="log/{tumour}.{chromosome}.mutect2-filter.stdout"
   shell:
     "({config[module_java]} && "
-    "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O tmp/{wildcards.tumour}.mutect2.pileup.table --intervals {input.regions_chr} && "
-    "tools/gatk-4.1.2.0/gatk CalculateContamination -I tmp/{wildcards.tumour}.mutect2.pileup.table -O tmp/{wildcards.tumour}.mutect2.contamination.table && "
-    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table tmp/{wildcards.tumour}.mutect2.contamination.table -O {output}) 1>{log.stdout} 2>{log.stderr}"
+    "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O {output.pileup} --intervals {input.regions_chr} && "
+    "tools/gatk-4.1.2.0/gatk CalculateContamination -I tmp/{wildcards.tumour}.mutect2.pileup.table -O {output.pileup} && "
+    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.pileup} -O {output}) 1>{log.stdout} 2>{log.stderr}"
 
 # run mutect without pon
 rule mutect2_somatic_no_pon:
