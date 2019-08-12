@@ -244,7 +244,7 @@ rule mosdepth:
     prefix="out/mosdepth/{sample}"
   shell:
     "{config[module_R]} && "
-    "tools/mosdepth --by {input.bed} -n --quantize --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
+    "tools/mosdepth --by {input.bed} -n --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
     "touch {output}"
 
 rule multiqc:
