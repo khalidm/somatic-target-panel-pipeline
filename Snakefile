@@ -750,7 +750,7 @@ rule mutect2_filter:
     "({config[module_java]} && "
     "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O {output.pileup} --intervals {input.regions_chr} && "
     "tools/gatk-4.1.2.0/gatk CalculateContamination -I {output.pileup} -O {output.contamination} && "
-    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.contamination} -O {output}) 1>{log.stdout} 2>{log.stderr}"
+    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.contamination} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
 
 # run mutect without pon
 rule mutect2_somatic_no_pon:
