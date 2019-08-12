@@ -776,7 +776,8 @@ rule mutect2_somatic:
     # vcfs=expand("tmp/{{tumour}}.{chromosome}.mutect2.vcf.gz", chromosome=GATK_CHROMOSOMES)
     vcfs=expand("tmp/{{tumour}}.{chromosome}.mutect2.filter.vcf.gz", chromosome=GATK_CHROMOSOMES) # filtered
   output:
-    "out/{tumour}.mutect2.vcf.gz"
+    "out/{tumour}.mutect2.filter.vcf.gz"
+    # "out/{tumour}.mutect2.vcf.gz"
   log:
     stderr="log/{tumour}.mutect2.mergevcfs.stderr"
   params:
