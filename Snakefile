@@ -712,7 +712,7 @@ rule mutect2_somatic_chr:
     reference=config["genome"],
     dbsnp="reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz",
     regions=config["regions"],
-    regions_chr=config["regions_name"]"_{chromosome}.bed",
+    regions_chr=config["regions_name"] + "_{chromosome}.bed",
     #pon="out/mutect2.pon.vcf.gz",
     pon_chr="tmp/mutect2.pon.{chromosome}.vcf.gz",
     #pon_chr=expand("out/mutect2.pon.{chromosome}.vcf.gz", chromosome=GATK_CHROMOSOMES),
@@ -1115,7 +1115,6 @@ rule vardict:
     "{config[module_R]} && "
     "{config[module_java]} && "
     "tools/VarDict-{config[vardict_version]}/bin/VarDict \
-    -h \
     -G {input.reference} \
     -f {config[af_threshold]} \
     -b '{input.bams[1]}|{input.bams[0]}' \
