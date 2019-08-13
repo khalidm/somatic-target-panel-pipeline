@@ -74,6 +74,7 @@ rule all:
     "out/aggregate/max_coverage.tsv",
     "out/aggregate/ontarget.tsv",
     "out/aggregate/qc.summary.tsv",
+    "out/aggregate/multiqc.html", # overall general qc
 
     "out/aggregate/ontarget.png", # combined ontarget coverage plots
     "out/aggregate/ontarget_tumour.png", # somatic ontarget coverage plots
@@ -740,8 +741,8 @@ rule mutect2_filter:
     regions_chr=config["regions_name"] + "_{chromosome}.bed",
     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz"
   output:
-    pileup="tmp/{wildcards.tumour}.{chromosome}.mutect2.pileup.table",
-    contamination="tmp/{wildcards.tumour}.{chromosome}.mutect2.contamination.table",
+    pileup="tmp/{tumour}.{chromosome}.mutect2.pileup.table",
+    contamination="tmp/{tumour}.{chromosome}.mutect2.contamination.table",
     vcf="out/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2-filter.stderr",
