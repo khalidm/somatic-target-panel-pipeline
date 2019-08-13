@@ -743,7 +743,7 @@ rule mutect2_filter:
   output:
     pileup="tmp/{tumour}.{chromosome}.mutect2.pileup.table",
     contamination="tmp/{tumour}.{chromosome}.mutect2.contamination.table",
-    vcf="out/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
+    vcf="tmp/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2-filter.stderr",
     stdout="log/{tumour}.{chromosome}.mutect2-filter.stdout"
