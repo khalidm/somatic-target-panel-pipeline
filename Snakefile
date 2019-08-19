@@ -751,7 +751,8 @@ rule mutect2_filter:
     "({config[module_java]} && "
     "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O {output.pileup} --intervals {input.regions_chr} && "
     "tools/gatk-4.1.2.0/gatk CalculateContamination -I {output.pileup} -O {output.contamination} && "
-    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.contamination} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
+    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
+    # don't need contamination table for small gene panels "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.contamination} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
 
 # run mutect without pon
 rule mutect2_somatic_no_pon:
@@ -1012,8 +1013,8 @@ rule intersect_somatic_callers:
     #"({config[module_samtools]} && "
     #"{config[module_htslib]} && "
     #"{config[module_bedtools]} && "
-    "python src/vcf_intersect.py --allowed_filters str_contraction --pass_only --inputs {input.strelka_snvs} {input.mutect2} > tmp/{wildcards.tumour}.intersect.unsorted.vcf && "
-    "python src/vcf_intersect.py --allowed_filters str_contraction --pass_only --inputs {input.strelka_indels} {input.mutect2} | grep -v '^#' >> tmp/{wildcards.tumour}.intersect.unsorted.vcf && "
+    "python src/vcf_intersect.py --allowed_filters str_contraction LowDepth --inputs {input.strelka_snvs} {input.mutect2} > tmp/{wildcards.tumour}.intersect.unsorted.vcf && "
+    "python src/vcf_intersect.py --allowed_filters str_contraction LowDepth --inputs {input.strelka_indels} {input.mutect2} | sed -n '/^#/!p' >> tmp/{wildcards.tumour}.intersect.unsorted.vcf && "
     "grep '^#' tmp/{wildcards.tumour}.intersect.unsorted.vcf > tmp/{wildcards.tumour}.intersect.vcf && "
     "bedtools sort < tmp/{wildcards.tumour}.intersect.unsorted.vcf >> tmp/{wildcards.tumour}.intersect.vcf && "
     "bgzip < tmp/{wildcards.tumour}.intersect.vcf > {output}"
