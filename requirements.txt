@@ -1,0 +1,6 @@
+snakemake
+multiqc
+scipy
+cyvcf2
+pysam
+intervaltree=2.1.0

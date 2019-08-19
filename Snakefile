@@ -1143,7 +1143,7 @@ rule vardict:
     "tools/VarDict-{config[vardict_version]}/bin/VarDict \
     -G {input.reference} \
     -f {config[af_threshold]} \
-    -b '{input.bams[1]}|{input.bams[0]}' \
+    -b '{input.bams[0]}|{input.bams[1]}' \
     -Q 1 \
     -c 1 \
     -S 2 \
