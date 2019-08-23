@@ -248,6 +248,20 @@ rule mosdepth:
     "tools/mosdepth --by {input.bed} -n --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
     "touch {output}"
 
+rule mosdepth_exon:
+  input:
+    #fastqs=lambda wildcards: config["samples"][wildcards.sample]
+    bam="out/{sample}.sorted.dups.bam",
+    bed=config["regions_exons"]
+  output:
+    "out/mosdepth_exons/{sample}.mosdepth.completed"
+  params:
+    prefix="out/mosdepth_exons/{sample}_exons"
+  shell:
+    "{config[module_R]} && "
+    "tools/mosdepth --by {input.bed} -n --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
+    "touch {output}"
+
 rule multiqc:
   input:
     expand("out/fastqc/{sample}/completed", sample=config['samples']),
