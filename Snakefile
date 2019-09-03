@@ -31,6 +31,11 @@ def tumour_germline_bams(wildcards):
   normal_bam = 'out/{}.sorted.dups.bam'.format(config["tumours"][wildcards.tumour])
   return [tumour_bam, normal_bam]
 
+def dir_tumour_germline_bams(wildcards):
+  tumour_bam = 'out/{}/{}.sorted.dups.bam'.format(wildcards.sample, wildcards.tumour)
+  normal_bam = 'out/{}/{}.sorted.dups.bam'.format(wildcards.sample, config["tumours"][wildcards.tumour])
+  return [tumour_bam, normal_bam]
+
 def germline_samples():
   samples = set(config['samples'])
   tumours = set(config['tumours'])
@@ -380,7 +385,7 @@ rule gatk_duplicates:
   output:
     "out/{sample}/{sample}.sorted.dups.bam",
     "out/{sample}/{sample}.sorted.dups.bai",
-    "out/{sample}/{sample}.markduplicates.metrics"    
+    "out/{sample}/{sample}.markduplicates.metrics"
   log:
     "log/{sample}.markduplicates.stderr"
   shell:
