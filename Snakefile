@@ -376,7 +376,8 @@ rule sort:
 # duplicates
 rule gatk_duplicates:
   input:
-    bam="tmp/{sample}.sorted.bam"
+    bam="tmp/{sample}.sorted.bam",
+    dirname="{sample}"
   output:
     "out/{sample}.sorted.dups.bam",
     "out/{sample}.sorted.dups.bai",
@@ -385,6 +386,7 @@ rule gatk_duplicates:
     "log/{sample}.markduplicates.stderr"
   shell:
     "{config[module_java]} && "
+    "echo {input.dirname} &&"
     "java -jar tools/picard-2.8.2.jar MarkDuplicates INPUT={input.bam} OUTPUT={output[0]} METRICS_FILE={output[2]} VALIDATION_STRINGENCY=LENIENT ASSUME_SORTED=True CREATE_INDEX=True MAX_RECORDS_IN_RAM=2000000"
 
 ### germline variant calling ###
