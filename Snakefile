@@ -376,15 +376,15 @@ rule sort:
 # duplicates
 rule gatk_duplicates:
   input:
-    bam="tmp/{sample}.sorted.bam",
-    # dirname="{sample}"
+    bam="tmp/{sample}.sorted.bam"
   output:
-    "out/{sample}.sorted.dups.bam",
-    "out/{sample}.sorted.dups.bai",
-    "out/{sample}.markduplicates.metrics"
+    "out/{sample}/{sample}.sorted.dups.bam",
+    "out/{sample}/{sample}.sorted.dups.bai",
+    "out/{sample}/{sample}.markduplicates.metrics"    
   log:
     "log/{sample}.markduplicates.stderr"
   shell:
+    "mkdir -p out/{wildcards.sample}"
     "{config[module_java]} && "
     # "echo {input.dirname} &&"
     "java -jar tools/picard-2.8.2.jar MarkDuplicates INPUT={input.bam} OUTPUT={output[0]} METRICS_FILE={output[2]} VALIDATION_STRINGENCY=LENIENT ASSUME_SORTED=True CREATE_INDEX=True MAX_RECORDS_IN_RAM=2000000"
