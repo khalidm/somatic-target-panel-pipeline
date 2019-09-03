@@ -377,7 +377,7 @@ rule sort:
 rule gatk_duplicates:
   input:
     bam="tmp/{sample}.sorted.bam",
-    dirname="{sample}"
+    # dirname="{sample}"
   output:
     "out/{sample}.sorted.dups.bam",
     "out/{sample}.sorted.dups.bai",
