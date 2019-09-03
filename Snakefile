@@ -1166,7 +1166,8 @@ rule filter_genes_of_interest_tumour:
 rule vardict:
   input:
     reference=config["genome"],
-    bams=tumour_germline_bams,
+    # bams=tumour_germline_bams,
+    bams=dir_tumour_germline_bams,
     bed=config["regions"]
     # interval=rules.genome_interval.output
   output:
