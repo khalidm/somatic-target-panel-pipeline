@@ -557,6 +557,11 @@ rule qc_oxidative_artifacts:
     "{config[module_java]} && "
     "java -jar tools/picard-2.8.2.jar CollectOxoGMetrics I={input.bam} O={output} R={input.reference} 2>{log.stderr} 1>{log.stdout}"
 
+### simple germline variant calling using GATK ###
+
+
+
+
 ### somatic variant calling ###
 rule strelka_somatic:
   input:
@@ -735,7 +740,8 @@ rule mutect2_somatic_chr:
     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
     bams=tumour_germline_dup_bams
   output:
-    "tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
+    vcf="tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
+    f1r2="tmp/{tumour}.{chromosome}.f1r2.tar.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2.stderr"
   params:
@@ -743,7 +749,12 @@ rule mutect2_somatic_chr:
   shell:
     "{config[module_java]} && "
     # "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
-    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions_chr} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
+    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} \
+    --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output.vcf} --germline-resource {input.gnomad} \
+    --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 \
+    -L {input.regions_chr} --interval-set-rule INTERSECTION \
+    --f1r2-tar-gz {output.f1r2} \
+    --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
 
 # new mutect2filter before merging
 rule mutect2_filter:
@@ -754,39 +765,42 @@ rule mutect2_filter:
     bam="out/{tumour}.sorted.dups.bam",
     regions=config["regions"],
     regions_chr=config["regions_name"] + "_{chromosome}.bed",
-    gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz"
+    gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
+    f1r2="tmp/{tumour}.{chromosome}.f1r2.tar.gz"
   output:
     pileup="tmp/{tumour}.{chromosome}.mutect2.pileup.table",
     contamination="tmp/{tumour}.{chromosome}.mutect2.contamination.table",
-    vcf="tmp/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
+    vcf="tmp/{tumour}.{chromosome}.mutect2.filtered.vcf.gz",
+    orientation="tmp/{tumour}.{chromosome}.read-orientation-model.tar.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2-filter.stderr",
     stdout="log/{tumour}.{chromosome}.mutect2-filter.stdout"
   shell:
     "({config[module_java]} && "
+    "tools/gatk-4.1.2.0/gatk LearnReadOrientationModel -I {input.f1r2} -O {output.orientation}"
     "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O {output.pileup} --intervals {input.regions_chr} && "
     "tools/gatk-4.1.2.0/gatk CalculateContamination -I {output.pileup} -O {output.contamination} && "
-    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
+    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --ob-priors {output.orientation} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
     # don't need contamination table for small gene panels "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table {output.contamination} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
 
-# run mutect without pon
-rule mutect2_somatic_no_pon:
-  input:
-    reference=config["genome"],
-    dbsnp="reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz",
-    regions=config["regions"],
-    gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
-    bams=tumour_germline_dup_bams
-    #vcfs=expand("tmp/{{tumour}}.{chromosome}.mutect2.vcf.gz", chromosome=GATK_CHROMOSOMES)
-  output:
-    "out/{tumour}.mutect2_no_pon.vcf.gz"
-  log:
-    stderr="log/{tumour}.mutect2.no_pon.stderr"
-  params:
-    germline=lambda wildcards: config["tumours"][wildcards.tumour]
-  shell:
-    "{config[module_java]} && "
-    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -L {input.regions} -I {input.bams[0]} -I {input.bams[1]} --normal {params.germline} --output {output} --germline-resource {input.gnomad} 2>{log.stderr}"
+# # run mutect without pon
+# rule mutect2_somatic_no_pon:
+#   input:
+#     reference=config["genome"],
+#     dbsnp="reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz",
+#     regions=config["regions"],
+#     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
+#     bams=tumour_germline_dup_bams
+#     #vcfs=expand("tmp/{{tumour}}.{chromosome}.mutect2.vcf.gz", chromosome=GATK_CHROMOSOMES)
+#   output:
+#     "out/{tumour}.mutect2_no_pon.vcf.gz"
+#   log:
+#     stderr="log/{tumour}.mutect2.no_pon.stderr"
+#   params:
+#     germline=lambda wildcards: config["tumours"][wildcards.tumour]
+#   shell:
+#     "{config[module_java]} && "
+#     "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -L {input.regions} -I {input.bams[0]} -I {input.bams[1]} --normal {params.germline} --output {output} --germline-resource {input.gnomad} 2>{log.stderr}"
 
 rule mutect2_somatic:
   input:
@@ -841,29 +855,29 @@ rule mutect2_somatic:
 #    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table tmp/{wildcards.tumour}.mutect2.contamination.table -O {output}) 1>{log.stdout} 2>{log.stderr}"
 
 ### platypus ###
-rule platypus_somatic:
-  input:
-    reference=config["genome"],
-    bams=tumour_germline_bams
-
-  output:
-    joint="out/{tumour}.platypus.joint.vcf.gz",
-    somatic="out/{tumour}.platypus.somatic.vcf.gz"
-
-  log:
-    "log/{tumour}.platypus.somatic.log"
-
-  params:
-    germline=germline_sample
-
-  shell:
-    # platypus has to run from build directory
-    "({config[module_python2]} && "
-    "{config[module_htslib]} && "
-    "{config[module_samtools]} && "
-    "tools/Platypus_0.8.1/Platypus.py callVariants --bamFiles={input.bams[0]},{input.bams[1]} --refFile={input.reference} --output=tmp/platypus_{wildcards.tumour}.vcf && "
-    "bgzip < tmp/platypus_{wildcards.tumour}.vcf > {output.joint} && "
-    "python tools/Platypus/extensions/Cancer/somaticMutationDetector.py --inputVCF tmp/platypus_{wildcards.tumour}.vcf --outputVCF {output.somatic} --tumourSample {wildcards.tumour}.sorted.dups --normalSample {params.germline}.sorted.dups) 2>{log}"
+# rule platypus_somatic:
+#   input:
+#     reference=config["genome"],
+#     bams=tumour_germline_bams
+#
+#   output:
+#     joint="out/{tumour}.platypus.joint.vcf.gz",
+#     somatic="out/{tumour}.platypus.somatic.vcf.gz"
+#
+#   log:
+#     "log/{tumour}.platypus.somatic.log"
+#
+#   params:
+#     germline=germline_sample
+#
+#   shell:
+#     # platypus has to run from build directory
+#     "({config[module_python2]} && "
+#     "{config[module_htslib]} && "
+#     "{config[module_samtools]} && "
+#     "tools/Platypus_0.8.1/Platypus.py callVariants --bamFiles={input.bams[0]},{input.bams[1]} --refFile={input.reference} --output=tmp/platypus_{wildcards.tumour}.vcf && "
+#     "bgzip < tmp/platypus_{wildcards.tumour}.vcf > {output.joint} && "
+#     "python tools/Platypus/extensions/Cancer/somaticMutationDetector.py --inputVCF tmp/platypus_{wildcards.tumour}.vcf --outputVCF {output.somatic} --tumourSample {wildcards.tumour}.sorted.dups --normalSample {params.germline}.sorted.dups) 2>{log}"
 
 ### pindel ###
 #rule pindel_somatic:
