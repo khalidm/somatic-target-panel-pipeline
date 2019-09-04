@@ -749,13 +749,7 @@ rule mutect2_somatic_chr:
   shell:
     "{config[module_java]} && "
     # "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
-    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} \
-    -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} \
-    --output {output.vcf} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 \
-    -pon {input.pon_chr} --interval-padding 1000 -L {input.regions_chr} \
-    --interval-set-rule INTERSECTION \
-    --f1r2-tar-gz {output.f1r2} \
-    --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
+    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output.vcf} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions_chr} --interval-set-rule INTERSECTION --f1r2-tar-gz {output.f1r2} --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
 
 # new mutect2filter before merging
 rule mutect2_filter:
