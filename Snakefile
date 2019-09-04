@@ -740,7 +740,7 @@ rule mutect2_somatic_chr:
     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
     bams=tumour_germline_dup_bams
   output:
-    "tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
+    vcf="tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
     f1r2="tmp/{tumour}.{chromosome}.f1r2.tar.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2.stderr"
@@ -751,7 +751,7 @@ rule mutect2_somatic_chr:
     # "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
     "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} \
     -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} \
-    --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 \
+    --output {output.vcf} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 \
     -pon {input.pon_chr} --interval-padding 1000 -L {input.regions_chr} \
     --interval-set-rule INTERSECTION \
     --f1r2-tar-gz {output.f1r2} \
