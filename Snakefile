@@ -31,11 +31,6 @@ def tumour_germline_bams(wildcards):
   normal_bam = 'out/{}.sorted.dups.bam'.format(config["tumours"][wildcards.tumour])
   return [tumour_bam, normal_bam]
 
-def dir_tumour_germline_bams(wildcards):
-  tumour_bam = 'out/{}/{}.sorted.dups.bam'.format(wildcards.sample, wildcards.tumour)
-  normal_bam = 'out/{}/{}.sorted.dups.bam'.format(wildcards.sample, config["tumours"][wildcards.tumour])
-  return [tumour_bam, normal_bam]
-
 def germline_samples():
   samples = set(config['samples'])
   tumours = set(config['tumours'])
@@ -381,18 +376,16 @@ rule sort:
 # duplicates
 rule gatk_duplicates:
   input:
-    bam="tmp/{sample}.sorted.bam"
+    "tmp/{sample}.sorted.bam"
   output:
-    "out/{sample}/{sample}.sorted.dups.bam",
-    "out/{sample}/{sample}.sorted.dups.bai",
-    "out/{sample}/{sample}.markduplicates.metrics"
+    "out/{sample}.sorted.dups.bam",
+    "out/{sample}.sorted.dups.bai",
+    "out/{sample}.markduplicates.metrics"
   log:
     "log/{sample}.markduplicates.stderr"
   shell:
-    "mkdir -p out/{wildcards.sample}"
     "{config[module_java]} && "
-    # "echo {input.dirname} &&"
-    "java -jar tools/picard-2.8.2.jar MarkDuplicates INPUT={input.bam} OUTPUT={output[0]} METRICS_FILE={output[2]} VALIDATION_STRINGENCY=LENIENT ASSUME_SORTED=True CREATE_INDEX=True MAX_RECORDS_IN_RAM=2000000"
+    "java -jar tools/picard-2.8.2.jar MarkDuplicates INPUT={input} OUTPUT={output[0]} METRICS_FILE={output[2]} VALIDATION_STRINGENCY=LENIENT ASSUME_SORTED=True CREATE_INDEX=True MAX_RECORDS_IN_RAM=2000000"
 
 ### germline variant calling ###
 rule gatk_haplotype_caller:
@@ -747,7 +740,7 @@ rule mutect2_somatic_chr:
     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz",
     bams=tumour_germline_dup_bams
   output:
-    vcf="tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
+    "tmp/{tumour}.{chromosome}.mutect2.vcf.gz",
     f1r2="tmp/{tumour}.{chromosome}.f1r2.tar.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2.stderr"
@@ -756,10 +749,11 @@ rule mutect2_somatic_chr:
   shell:
     "{config[module_java]} && "
     # "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 -L {input.regions} -L {wildcards.chromosome} --interval-set-rule INTERSECTION --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
-    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} -I {input.bams[0]} -I {input.bams[1]} \
-    --tumor-sample {wildcards.tumour} --normal-sample {params.germline} --output {output.vcf} --germline-resource {input.gnomad} \
-    --af-of-alleles-not-in-resource 0.0000025 -pon {input.pon_chr} --interval-padding 1000 \
-    -L {input.regions_chr} --interval-set-rule INTERSECTION \
+    "tools/gatk-4.1.2.0/gatk --java-options '-Xmx30G' Mutect2 -R {input.reference} \
+    -I {input.bams[0]} -I {input.bams[1]} --tumor-sample {wildcards.tumour} --normal-sample {params.germline} \
+    --output {output} --germline-resource {input.gnomad} --af-of-alleles-not-in-resource 0.0000025 \
+    -pon {input.pon_chr} --interval-padding 1000 -L {input.regions_chr} \
+    --interval-set-rule INTERSECTION \
     --f1r2-tar-gz {output.f1r2} \
     --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter"
 
@@ -777,14 +771,14 @@ rule mutect2_filter:
   output:
     pileup="tmp/{tumour}.{chromosome}.mutect2.pileup.table",
     contamination="tmp/{tumour}.{chromosome}.mutect2.contamination.table",
-    vcf="tmp/{tumour}.{chromosome}.mutect2.filtered.vcf.gz",
+    vcf="tmp/{tumour}.{chromosome}.mutect2.filter.vcf.gz",
     orientation="tmp/{tumour}.{chromosome}.read-orientation-model.tar.gz",
   log:
     stderr="log/{tumour}.{chromosome}.mutect2-filter.stderr",
     stdout="log/{tumour}.{chromosome}.mutect2-filter.stdout"
   shell:
     "({config[module_java]} && "
-    "tools/gatk-4.1.2.0/gatk LearnReadOrientationModel -I {input.f1r2} -O {output.orientation}"
+    "tools/gatk-4.1.2.0/gatk LearnReadOrientationModel -I {input.f1r2} -O {output.orientation} && "
     "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O {output.pileup} --intervals {input.regions_chr} && "
     "tools/gatk-4.1.2.0/gatk CalculateContamination -I {output.pileup} -O {output.contamination} && "
     "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --ob-priors {output.orientation} -O {output.vcf}) 1>{log.stdout} 2>{log.stderr}"
@@ -1166,8 +1160,7 @@ rule filter_genes_of_interest_tumour:
 rule vardict:
   input:
     reference=config["genome"],
-    # bams=tumour_germline_bams,
-    bams=dir_tumour_germline_bams,
+    bams=tumour_germline_bams,
     bed=config["regions"]
     # interval=rules.genome_interval.output
   output:
