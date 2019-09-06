@@ -72,6 +72,8 @@ rule all:
     "out/aggregate/mutational_signatures_v3_id.combined.tsv",
     "out/aggregate/mutational_signatures_v3_id_strelka.filter.combined.tsv",
 
+    "out/aggregate/germline_joint.hc.normalized.vep.vcf.gz", # gatk calls for all germline samples
+
     "out/aggregate/max_coverage.tsv",
     "out/aggregate/ontarget.tsv",
     "out/aggregate/qc.summary.tsv",
@@ -811,43 +813,6 @@ rule mutect2_somatic:
   shell:
     "{config[module_java]} && "
     "java -jar tools/picard-2.8.2.jar MergeVcfs {params.inputs} O={output} 2>{log.stderr}"
-
-# rule mutect2_filter:
-#   input:
-#     reference=config["genome"],
-#     vcf="out/{tumour}.mutect2.vcf.gz",
-#     bam="out/{tumour}.sorted.dups.bam",
-#     regions=config["regions"],
-#     gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz"
-#   output:
-#     "out/{tumour}.mutect2.filter.vcf.gz"
-#   log:
-#     stderr="log/{tumour}.mutect2-filter.stderr",
-#     stdout="log/{tumour}.mutect2-filter.stdout"
-#   shell:
-#     "({config[module_java]} && "
-#     "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O tmp/{wildcards.tumour}.mutect2.pileup.table --intervals {input.regions} && "
-#     "tools/gatk-4.1.2.0/gatk CalculateContamination -I tmp/{wildcards.tumour}.mutect2.pileup.table -O tmp/{wildcards.tumour}.mutect2.contamination.table && "
-#     "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table tmp/{wildcards.tumour}.mutect2.contamination.table -O {output}) 1>{log.stdout} 2>{log.stderr}"
-
-# SWAP ABOVE WITH BELOW
-#rule mutect2_filter:
-#  input:
-#    reference=config["genome"],
-#    vcf="out/{tumour}.mutect2.vcf.gz",
-#    bam="out/{tumour}.sorted.dups.bam",
-#    regions=config["regions"],
-#    gnomad="reference/af-only-gnomad.raw.sites.b37.vcf.gz"
-#  output:
-#    "out/{tumour}.mutect2.filter.vcf.gz"
-#  log:
-#    stderr="log/{tumour}.mutect2-filter.stderr",
-#    stdout="log/{tumour}.mutect2-filter.stdout"
-#  shell:
-#    "({config[module_java]} && "
-#    "tools/gatk-4.1.2.0/gatk GetPileupSummaries -I {input.bam} -V {input.gnomad} -O tmp/{wildcards.tumour}.mutect2.pileup.table --intervals {input.regions} && "
-#    "tools/gatk-4.1.2.0/gatk CalculateContamination -I tmp/{wildcards.tumour}.mutect2.pileup.table -O tmp/{wildcards.tumour}.mutect2.contamination.table && "
-#    "tools/gatk-4.1.2.0/gatk FilterMutectCalls -V {input.vcf} -R {input.reference} --contamination-table tmp/{wildcards.tumour}.mutect2.contamination.table -O {output}) 1>{log.stdout} 2>{log.stderr}"
 
 ### platypus ###
 # rule platypus_somatic:
