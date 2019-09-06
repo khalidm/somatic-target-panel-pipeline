@@ -807,7 +807,7 @@ rule mutect2_somatic:
   log:
     stderr="log/{tumour}.mutect2.mergevcfs.stderr"
   params:
-    inputs=' '.join(['I={}'.format(vcf) for vcf in expand("tmp/{{tumour}}.{chromosome}.mutect2.vcf.gz", chromosome=GATK_CHROMOSOMES)])
+    inputs=' '.join(['I={}'.format(vcf) for vcf in expand("tmp/{{tumour}}.{chromosome}.mutect2.filter.vcf.gz", chromosome=GATK_CHROMOSOMES)])
   shell:
     "{config[module_java]} && "
     "java -jar tools/picard-2.8.2.jar MergeVcfs {params.inputs} O={output} 2>{log.stderr}"
