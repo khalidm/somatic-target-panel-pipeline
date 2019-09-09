@@ -663,7 +663,7 @@ rule annotate_dps_strelka_somatic_filter:
   log:
     stderr="log/{tumour}.annotate_dps_strelka_somatic_filter.stderr"
   shell:
-    "src/vtfilter.sh {input} {output} 2>{log.stderr}"
+    "src/vtfilter.sh {input} {output} {config[af_threshold]} {config[depth_n]} {config[depth_t]} 2>{log.stderr}"
 
 rule annotate_dps_strelka_somatic_filter_indels:
   input:
@@ -673,7 +673,7 @@ rule annotate_dps_strelka_somatic_filter_indels:
   log:
     stderr="log/{tumour}.annotate_dps_strelka_somatic_filter_indels.stderr"
   shell:
-    "src/vtfilter.sh {input} {output} 2>{log.stderr}"
+    "src/vtfilter.sh {input} {output} {config[af_threshold]} {config[depth_n]} {config[depth_t]} 2>{log.stderr}"
 
 # tumour only for each germline
 rule mutect2_sample_pon:
@@ -954,7 +954,7 @@ rule mutect2_vt_filter:
   log:
     stderr="log/{tumour}.mutect2_vt_filter.stderr"
   shell:
-    "src/vtfilter.sh {input} {output} 2>{log.stderr}"
+    "src/vtfilter.sh {input} {output} {config[af_threshold]} {config[depth_n]} {config[depth_t]} 2>{log.stderr}"
 
 rule annotate_vep_mutect2:
   input:
