@@ -419,26 +419,26 @@ rule gatk_joint_genotype:
     variant_list=' '.join(['--variant {}'.format(gvcf) for gvcf in expand("out/{germline}.hc.gvcf.gz", germline=germline_samples())])
   shell:
     "({config[module_java]} && "
-    "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {wildcards.chromosome} -o tmp/germline_combined_{wildcards.chromosome}.gvcf && "
+    "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {wildcards.chromosome} -o tmp/germline_combined_{wildcards.chromosome}.gvcf -A DepthPerSampleHC -A DepthPerAlleleBySample -A QualByDepth -A RMSMappingQuality -A MappingQualityRankSumTest -A FisherStrand -A StrandOddsRatio && "
     "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/germline_combined_{wildcards.chromosome}.gvcf -L {wildcards.chromosome} --use-new-qual-calculator true --output out/germline_joint_{wildcards.chromosome}.vcf"
     ") 2>{log}"
 
 # call germline variants on the tumour for validation
-rule gatk_joint_genotype_tumours:
-  input:
-    gvcfs=expand("out/{germline}.hc.gvcf.gz", germline=config["tumours"]),
-    reference=config["genome"]
-  output:
-    "out/tumour_joint_{chromosome}.vcf"
-  log:
-    "log/gatk_joint_tumour_{chromosome}.stderr"
-  params:
-    variant_list=' '.join(['--variant {}'.format(gvcf) for gvcf in expand("out/{germline}.hc.gvcf.gz", germline=config["tumours"])])
-  shell:
-    "({config[module_java]} && "
-    "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {wildcards.chromosome} -o tmp/tumours_combined_{wildcards.chromosome}.gvcf && "
-    "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/tumours_combined_{wildcards.chromosome}.gvcf -L {wildcards.chromosome} --use-new-qual-calculator true --output out/tumour_joint_{wildcards.chromosome}.vcf"
-    ") 2>{log}"
+# rule gatk_joint_genotype_tumours:
+#   input:
+#     gvcfs=expand("out/{germline}.hc.gvcf.gz", germline=config["tumours"]),
+#     reference=config["genome"]
+#   output:
+#     "out/tumour_joint_{chromosome}.vcf"
+#   log:
+#     "log/gatk_joint_tumour_{chromosome}.stderr"
+#   params:
+#     variant_list=' '.join(['--variant {}'.format(gvcf) for gvcf in expand("out/{germline}.hc.gvcf.gz", germline=config["tumours"])])
+#   shell:
+#     "({config[module_java]} && "
+#     "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {wildcards.chromosome} -o tmp/tumours_combined_{wildcards.chromosome}.gvcf && "
+#     "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/tumours_combined_{wildcards.chromosome}.gvcf -L {wildcards.chromosome} --use-new-qual-calculator true --output out/tumour_joint_{wildcards.chromosome}.vcf"
+#     ") 2>{log}"
 
 # notes:
 # VariantRecalibrator removed due to large cohort size requirements
@@ -458,29 +458,30 @@ rule gatk_post_genotype:
     "tools/gatk-4.1.2.0/gatk GatherVcfs -R {input.reference} --OUTPUT=tmp/germline_joint.vcf {params.inputs} && "
     "bgzip -c < tmp/germline_joint.vcf > tmp/germline_joint.vcf.bgz && tabix -p vcf tmp/germline_joint.vcf.bgz && "
     "tools/gatk-4.1.2.0/gatk CalculateGenotypePosteriors -R {input.reference} --supporting reference/gatk-4-bundle-b37/1000G_phase3_v4_20130502.sites.vcf.bgz -V tmp/germline_joint.vcf.bgz -O tmp/germline_joint.cgp.vcf && "
-    "tools/vt-0.577/vt normalize -n -r {input.reference} tmp/germline_joint.cgp.vcf -o tmp/germline_joint.cgp.normalized.vcf && "
+    "tools/gatk-4.1.2.0/gatk VariantFiltration -R {input.reference} -V tmp/germline_joint.cgp.vcf -O tmp/germline_joint.cgp.filter.vcf --filterExpression \"QUAL < 30.0\" --filterName \"VeryLowQual\" --filterExpression \"QD < 2.0\" --filterName \"LowQD\" --filterExpression \"DP < 10\" --filterName \"LowCoverage\" --filterExpression \"MQ < 40.0\" --filterName \"LowMappingQual\" --filterExpression \"SOR > 4.0\" --filterName \"StrandBias\" --filterExpression \"HRun > 5.0\" --filterName \"HRun5\" --clusterSize 3 && "
+    "tools/vt-0.577/vt normalize -n -r {input.reference} tmp/germline_joint.cgp.filter.vcf -o tmp/germline_joint.cgp.normalized.vcf && "
     "tools/vt-0.577/vt decompose -s tmp/germline_joint.cgp.normalized.vcf | tools/vt-0.577/vt normalize -r {input.reference} - -o {output}"
     ") 2>{log}"
 
-rule gatk_post_genotype_tumours:
-  input:
-    gvcfs=expand("out/tumour_joint_{chromosome}.vcf", chromosome=GATK_CHROMOSOMES),
-    reference=config["genome"]
-  output:
-    "out/tumour_joint.hc.normalized.vcf"
-  log:
-    "log/gatk_post.stderr"
-  params:
-    inputs=' '.join(['--INPUT={}'.format(gvcf) for gvcf in expand("out/tumour_joint_{chromosome}.vcf", chromosome=GATK_CHROMOSOMES)])
-  shell:
-    "({config[module_java]} && {config[module_R]} && {config[module_samtools]} && "
-    "{config[module_htslib]} && "
-    "tools/gatk-4.1.2.0/gatk GatherVcfs -R {input.reference} --OUTPUT=tmp/tumour_joint.vcf {params.inputs} && "
-    "bgzip -c < tmp/tumour_joint.vcf > tmp/tumour_joint.vcf.bgz && tabix -p vcf tmp/tumour_joint.vcf.bgz && "
-    "tools/gatk-4.1.2.0/gatk CalculateGenotypePosteriors -R {input.reference} --supporting reference/gatk-4-bundle-b37/1000G_phase3_v4_20130502.sites.vcf.bgz -V tmp/tumour_joint.vcf.bgz -O tmp/tumour_joint.cgp.vcf && "
-    "tools/vt-0.577/vt normalize -n -r {input.reference} tmp/tumour_joint.cgp.vcf -o tmp/tumour_joint.cgp.normalized.vcf && "
-    "tools/vt-0.577/vt decompose -s tmp/tumour_joint.cgp.normalized.vcf | tools/vt-0.577/vt normalize -r {input.reference} - -o {output}"
-    ") 2>{log}"
+# rule gatk_post_genotype_tumours:
+#   input:
+#     gvcfs=expand("out/tumour_joint_{chromosome}.vcf", chromosome=GATK_CHROMOSOMES),
+#     reference=config["genome"]
+#   output:
+#     "out/tumour_joint.hc.normalized.vcf"
+#   log:
+#     "log/gatk_post.stderr"
+#   params:
+#     inputs=' '.join(['--INPUT={}'.format(gvcf) for gvcf in expand("out/tumour_joint_{chromosome}.vcf", chromosome=GATK_CHROMOSOMES)])
+#   shell:
+#     "({config[module_java]} && {config[module_R]} && {config[module_samtools]} && "
+#     "{config[module_htslib]} && "
+#     "tools/gatk-4.1.2.0/gatk GatherVcfs -R {input.reference} --OUTPUT=tmp/tumour_joint.vcf {params.inputs} && "
+#     "bgzip -c < tmp/tumour_joint.vcf > tmp/tumour_joint.vcf.bgz && tabix -p vcf tmp/tumour_joint.vcf.bgz && "
+#     "tools/gatk-4.1.2.0/gatk CalculateGenotypePosteriors -R {input.reference} --supporting reference/gatk-4-bundle-b37/1000G_phase3_v4_20130502.sites.vcf.bgz -V tmp/tumour_joint.vcf.bgz -O tmp/tumour_joint.cgp.vcf && "
+#     "tools/vt-0.577/vt normalize -n -r {input.reference} tmp/tumour_joint.cgp.vcf -o tmp/tumour_joint.cgp.normalized.vcf && "
+#     "tools/vt-0.577/vt decompose -s tmp/tumour_joint.cgp.normalized.vcf | tools/vt-0.577/vt normalize -r {input.reference} - -o {output}"
+#     ") 2>{log}"
 
 ### qc ###
 rule qc_max_coverage_combine:
