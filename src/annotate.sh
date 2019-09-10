@@ -16,6 +16,13 @@ OUTPUT=$2
 REFERENCE=$3
 THREADS=$4
 
+# ANNO=$5
+ANNO="/home/khalidm/cog/km/anno/anno.conf"
+# ANNOLUA=$6
+ANNOLUA="/home/khalidm/cog/km/anno/custom.lua"
+
+OUTPUT_TMP=${OUTPUT%.*.*}
+
 THREADS=1 # ignore threads parameter due to vep errors
 
 VEPPATH=/data/projects/punim0567/programs/vep/ensembl-vep/
@@ -40,7 +47,21 @@ $VEPPATH/vep \
     --flag_pick \
     --plugin MaxEntScan,$VEPPATH/data/MaxEntScan/
 
-bgzip < ${OUTPUT}.tmp.vcf > $OUTPUT
+bgzip < ${OUTPUT}.tmp.vcf > $OUTPUT_TMP.tmp.vcf.gz
 rm ${OUTPUT}.tmp.vcf
 
 echo "finishing vep at $(date)"
+echo "starting vcfanno at $(date)"
+
+#vcf_in=sps.raw.annotate.vqsr.filtered.vt.vep.vcf.gz
+#vcf_out=sps.vcf.gz
+
+#anno=/home/khalidm/cog/km/anno/anno.conf
+#annolua=/home/khalidm/cog/km/anno/custom.lua
+
+vcfanno -p $THREADS -lua ${ANNOLUA} ${ANNO} ${OUTPUT_TMP}.tmp.vcf.gz | bgzip -c > $OUTPUT
+tabix -p vcf $OUTPUT
+
+rm ${OUTPUT_TMP}.tmp.vcf.gz
+
+echo "finishing vcfanno at $(date)"
