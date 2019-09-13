@@ -393,7 +393,9 @@ rule gatk_duplicates:
 rule gatk_haplotype_caller:
   input:
     bam="out/{germline}.sorted.dups.bam",
-    reference=config["genome"]
+    reference=config["genome"],
+    regions=config["regions"],
+    regions_chr=config["regions_name"] + "_{chromosome}.bed"
   output:
     recal="out/{germline}.recal_table",
     bqsr="out/{germline}.sorted.dups.bqsr.bam",
@@ -404,13 +406,15 @@ rule gatk_haplotype_caller:
     "({config[module_java]} && "
     "tools/gatk-4.1.2.0/gatk BaseRecalibrator --input {input.bam} --output {output.recal} -R {input.reference} --known-sites reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/Mills_and_1000G_gold_standard.indels.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/1000G_phase1.indels.b37.vcf.bgz && "
     "tools/gatk-4.1.2.0/gatk ApplyBQSR -R {input.reference} -I {input.bam} -bqsr {output.recal} -O {output.bqsr} && "
-    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcf}"
+    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcf}"
     ") 2>{log}"
 
 rule gatk_joint_genotype:
   input:
     gvcfs=expand("out/{germline}.hc.gvcf.gz", germline=germline_samples()),
-    reference=config["genome"]
+    reference=config["genome"],
+    regions=config["regions"],
+    regions_chr=config["regions_name"] + "_{chromosome}.bed"
   output:
     "out/germline_joint_{chromosome}.vcf"
   log:
@@ -419,7 +423,7 @@ rule gatk_joint_genotype:
     variant_list=' '.join(['--variant {}'.format(gvcf) for gvcf in expand("out/{germline}.hc.gvcf.gz", germline=germline_samples())])
   shell:
     "({config[module_java]} && "
-    "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {wildcards.chromosome} -o tmp/germline_combined_{wildcards.chromosome}.gvcf -A DepthPerSampleHC -A DepthPerAlleleBySample -A QualByDepth -A RMSMappingQuality -A MappingQualityRankSumTest -A FisherStrand -A StrandOddsRatio && "
+    "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {input.regions_chr} -o tmp/germline_combined_{wildcards.chromosome}.gvcf -A DepthPerSampleHC -A DepthPerAlleleBySample -A QualByDepth -A RMSMappingQuality -A MappingQualityRankSumTest -A FisherStrand -A StrandOddsRatio && "
     "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/germline_combined_{wildcards.chromosome}.gvcf -L {wildcards.chromosome} --use-new-qual-calculator true --output out/germline_joint_{wildcards.chromosome}.vcf"
     ") 2>{log}"
 
