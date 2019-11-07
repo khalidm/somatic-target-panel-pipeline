@@ -1019,7 +1019,7 @@ rule intersect_somatic_callers:
 #######
 rule intersect_to_maf:
   input:
-    vcf="out/{tumour}.intersect.vcf.gz"
+    vcf="out/{tumour}.intersect.vcf.gz",
     reference=config['genome']
   output:
     vep="out/maf/{tumour}.intersect.vep.vcf",
