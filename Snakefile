@@ -1022,7 +1022,7 @@ rule intersect_to_maf:
     vcf="out/intersect.vcf.gz",
     reference=config['genome']
   output:
-    vep="out/maf/{tumour}.intersect.vep.vcf"
+    vep="out/maf/{tumour}.intersect.vep.vcf",
     maf="out/maf/{tumour}.intersect.maf"
   log:
     stderr="log/{tumour}.intersect.maf.log"
@@ -1030,7 +1030,8 @@ rule intersect_to_maf:
     cores=cluster["annotate_vep_intersect"]["n"]
   shell:
     "{config[module_samtools]} && "
-    "src/annotate.sh {input.vcf} {output} {input.reference} {params.cores} 2>{log}"
+    "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {wildcards.germline} 2>{log}"
+    # "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
 #######
 #######
 #######
