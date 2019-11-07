@@ -424,7 +424,7 @@ rule gatk_joint_genotype:
   shell:
     "({config[module_java]} && "
     "java -jar tools/GenomeAnalysisTK-3.7.0.jar -T CombineGVCFs -R {input.reference} {params.variant_list} -L {input.regions_chr} -o tmp/germline_combined_{wildcards.chromosome}.gvcf -A DepthPerSampleHC -A DepthPerAlleleBySample -A QualByDepth -A RMSMappingQuality -A MappingQualityRankSumTest -A FisherStrand -A StrandOddsRatio && "
-    "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/germline_combined_{wildcards.chromosome}.gvcf -L {wildcards.chromosome} --use-new-qual-calculator true --output out/germline_joint_{wildcards.chromosome}.vcf"
+    "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V tmp/germline_combined_{wildcards.chromosome}.gvcf -L {input.regions_chr} --use-new-qual-calculator true --output out/germline_joint_{wildcards.chromosome}.vcf"
     ") 2>{log}"
 
 # call germline variants on the tumour for validation
@@ -1013,6 +1013,27 @@ rule intersect_somatic_callers:
     "bedtools sort < tmp/{wildcards.tumour}.intersect.unsorted.vcf >> tmp/{wildcards.tumour}.intersect.vcf && "
     "bgzip < tmp/{wildcards.tumour}.intersect.vcf > {output}"
     " 2>{log.stderr}"
+
+#######
+#######
+#######
+rule intersect_to_maf:
+  input:
+    vcf="out/intersect.vcf.gz",
+    reference=config['genome']
+  output:
+    vep="out/maf/{tumour}.intersect.vep.vcf"
+    maf="out/maf/{tumour}.intersect.maf"
+  log:
+    stderr="log/{tumour}.intersect.maf.log"
+  params:
+    cores=cluster["annotate_vep_intersect"]["n"]
+  shell:
+    "{config[module_samtools]} && "
+    "src/annotate.sh {input.vcf} {output} {input.reference} {params.cores} 2>{log}"
+#######
+#######
+#######
 
 rule strelka_normalise:
   input:
