@@ -1019,7 +1019,7 @@ rule intersect_somatic_callers:
 #######
 rule intersect_to_maf:
   input:
-    vcf="out/intersect.vcf.gz",
+    vcf="out/{tumour}.intersect.vcf.gz"
     reference=config['genome']
   output:
     vep="out/maf/{tumour}.intersect.vep.vcf",
@@ -1031,7 +1031,7 @@ rule intersect_to_maf:
   shell:
     "{config[module_samtools]} && "
     "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {wildcards.germline} 2>{log}"
-    # "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
+    #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
 #######
 #######
 #######
