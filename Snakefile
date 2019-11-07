@@ -395,7 +395,7 @@ rule gatk_haplotype_caller:
     bam="out/{germline}.sorted.dups.bam",
     reference=config["genome"],
     regions=config["regions"],
-    regions_chr=config["regions_name"] + "_{chromosome}.bed"
+    #regions_chr=config["regions_name"] + "_{chromosome}.bed"
   output:
     recal="out/{germline}.recal_table",
     bqsr="out/{germline}.sorted.dups.bqsr.bam",
