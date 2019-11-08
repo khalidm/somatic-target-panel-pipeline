@@ -1000,16 +1000,17 @@ rule intersect_somatic_callers:
 #######
 rule intersect_to_maf:
   input:
-    germline_name=expand("out/{germline}.hc.gvcf.gz", germline=germline_samples()),
     vcf="out/{tumour}.intersect.vcf.gz",
-    reference=config['genome']
+    reference=config['genome'],
+    bams=tumour_germline_dup_bams
   output:
     vep="out/maf/{tumour}.intersect.vep.vcf",
     maf="out/maf/{tumour}.intersect.maf"
   log:
     stderr="log/{tumour}.intersect.maf.log"
   params:
-    cores=cluster["annotate_vep_intersect"]["n"]
+    cores=cluster["annotate_vep_intersect"]["n"],
+    germline=lambda wildcards: samples["tumours"][wildcards.tumour]
   shell:
     "{config[module_samtools]} && "
     "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {wildcards.germline} 2>{log}"
