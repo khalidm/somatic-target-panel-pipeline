@@ -1013,7 +1013,7 @@ rule intersect_to_maf:
     germline=lambda wildcards: samples["tumours"][wildcards.tumour]
   shell:
     "{config[module_samtools]} && "
-    "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {wildcards.germline} 2>{log}"
+    "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
 #######
 #######
