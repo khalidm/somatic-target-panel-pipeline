@@ -51,6 +51,7 @@ rule all:
     expand("out/fastqc/{sample}/completed", sample=config['samples']), # fastqc
     expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
     expand("out/mosdepth_exons/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
+    expand("out/peddy/peddy.completed"), # mosdepth
     expand("out/{sample}.metrics.insertsize", sample=config['samples']),
     expand("out/{sample}.metrics.alignment", sample=config['samples']),
     expand("out/{sample}.metrics.target", sample=config['samples']),
@@ -264,6 +265,22 @@ rule mosdepth_exon:
   shell:
     "{config[module_R]} && "
     "tools/mosdepth --by {input.bed} -n --thresholds 10,50,100,150,200,500,1000 {params.prefix} {input.bam} && "
+    "touch {output}"
+
+rule peddy:
+  input:
+    vcf="out/germline_joint.hc.normalized.vcf",
+    reference=config['genome'],
+    ped=config['ped']
+    # bam="out/{sample}.sorted.dups.bam",
+    # bed=config["regions_exons"]
+  output:
+    "out/peddy/peddy.completed"
+  # params:
+  #   prefix="out/mosdepth_exons/{sample}_exons"
+  shell:
+    "{config[module_R]} && "
+    "peddy --plot -p 2 --prefix mystudy {input.vcf} {input.ped} && "
     "touch {output}"
 
 rule multiqc:
