@@ -1000,6 +1000,7 @@ rule intersect_somatic_callers:
 #######
 rule intersect_to_maf:
   input:
+    germline_name=expand("out/{germline}.hc.gvcf.gz", germline=germline_samples()),
     vcf="out/{tumour}.intersect.vcf.gz",
     reference=config['genome']
   output:
