@@ -51,7 +51,7 @@ rule all:
     expand("out/{sample}.oxo_metrics.txt", sample=config['samples']),
     expand("out/{sample}.artifact_metrics.txt.error_summary_metrics", sample=config['samples']),
     expand("out/{tumour}.mutect2.filter.bias.vcf.gz", tumour=config['tumours']), # somatic mutect2 with dkfz bias annotation
-    expand("out/{sample}.hc.indels.vcf.gz", sample=config['samples']),
+    expand("out/{sample}.hc.gt.indels.vcf.gz", sample=config['samples']),
     expand("out/fastqc/{sample}/completed", sample=config['samples']), # fastqc
     expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
     expand("out/mosdepth_exons/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
@@ -445,7 +445,7 @@ rule gatk_genotype_hc_indels:
     #gvcf="out/{germline}.hc.gvcf.gz",
     tmp_vcf="tmp/{germline}.hc.gt.vcf",
     tmp_vcfindel="tmp/{germline}.hc.gt.indels.vcf",
-    vcfindel="out/{germline}.hc.gt.indels.vcf"
+    vcfindel="out/{germline}.hc.gt.indels.vcf.gz"
   log:
     "log/{germline}.hc.gt.indels.log"
   shell:
