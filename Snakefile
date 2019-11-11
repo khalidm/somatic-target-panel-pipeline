@@ -4,6 +4,9 @@ VERSION="0.1"
 configfile: "cfg/config.yaml"
 cluster = json.load(open("cfg/cluster.json"))
 
+import yaml
+samples = yaml.load(open("cfg/config.yaml"))
+
 # NOTE: no mitochondria MT because they aren't in our exome
 GATK_CHROMOSOMES=('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y')
 
@@ -48,6 +51,7 @@ rule all:
     expand("out/{sample}.oxo_metrics.txt", sample=config['samples']),
     expand("out/{sample}.artifact_metrics.txt.error_summary_metrics", sample=config['samples']),
     expand("out/{tumour}.mutect2.filter.bias.vcf.gz", tumour=config['tumours']), # somatic mutect2 with dkfz bias annotation
+    expand("out/{sample}.hc.indels.vcf.gz", sample=config['samples']),
     expand("out/fastqc/{sample}/completed", sample=config['samples']), # fastqc
     expand("out/mosdepth/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
     expand("out/mosdepth_exons/{sample}.mosdepth.completed", sample=config['samples']), # mosdepth
@@ -418,15 +422,38 @@ rule gatk_haplotype_caller:
   output:
     recal="out/{germline}.recal_table",
     bqsr="out/{germline}.sorted.dups.bqsr.bam",
-    gvcf="out/{germline}.hc.gvcf.gz"
+    gvcf="out/{germline}.hc.gvcf.gz",
+    gvcfindel="out/{germline}.hc.forindels.gvcf.gz"
   log:
     "log/{germline}.hc.log"
   shell:
     "({config[module_java]} && "
     "tools/gatk-4.1.2.0/gatk BaseRecalibrator --input {input.bam} --output {output.recal} -R {input.reference} --known-sites reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/Mills_and_1000G_gold_standard.indels.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/1000G_phase1.indels.b37.vcf.bgz && "
     "tools/gatk-4.1.2.0/gatk ApplyBQSR -R {input.reference} -I {input.bam} -bqsr {output.recal} -O {output.bqsr} && "
-    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcf}"
+    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcf} && "
+    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} -stand-call-conf 2 -stand_emit_conf 2 -A BaseQualityRankSumTest -A ClippingRankSumTest -A Coverage -A FisherStrand -A MappingQuality -A RMSMappingQuality -A ReadPosRankSumTest -A StrandOddsRatio -A TandemRepeatAnnotator --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcfindel}"
     ") 2>{log}"
+
+rule gatk_genotype_hc_indels:
+  input:
+    bam="out/{germline}.sorted.dups.bam",
+    vcf="out/{germline}.hc.gvcf.gz",
+    reference=config["genome"],
+    regions=config["regions"],
+    #regions_chr=config["regions_name"] + "_{chromosome}.bed"
+  output:
+    #gvcf="out/{germline}.hc.gvcf.gz",
+    tmp_vcf="tmp/{germline}.hc.gt.vcf",
+    tmp_vcfindel="tmp/{germline}.hc.gt.indels.vcf",
+    vcfindel="out/{germline}.hc.gt.indels.vcf"
+  log:
+    "log/{germline}.hc.gt.indels.log"
+  shell:
+    "({config[module_java]} && "
+    #"tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} -stand-call-conf 2 -stand_emit_conf 2 -A BaseQualityRankSumTest -A ClippingRankSumTest -A Coverage -A FisherStrand -A MappingQuality -A RMSMappingQuality -A ReadPosRankSumTest -A StrandOddsRatio -A TandemRepeatAnnotator --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcfindel}"
+    "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V {input.vcf} -L {input.regions} --use-new-qual-calculator true --output {output.tmp_vcf} && "
+    "tools/gatk-4.1.2.0/gatk SelectVariants -R {input.reference} -V {output.tmp_vcf} -o {output.tmp_vcfindel} --select-type-to-include INDEL --min-indel-size 10 && "
+    "bgzip -c {output.tmp_vcfindel} > {output.vcfindel} ") 2>{log}"
 
 rule gatk_joint_genotype:
   input:
@@ -569,7 +596,7 @@ rule strelka_somatic:
 
   shell:
     "(mkdir -p tmp/strelka_{wildcards.tumour}_$$ && "
-    "tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py "
+    "python2 tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py "
     "--ref {input.reference} "
     "--tumorBam {input.bams[0]} "
     "--normalBam {input.bams[1]} "
@@ -1010,9 +1037,11 @@ rule intersect_to_maf:
     stderr="log/{tumour}.intersect.maf.log"
   params:
     cores=cluster["annotate_vep_intersect"]["n"],
+    #germline=germline_sample
     germline=lambda wildcards: samples["tumours"][wildcards.tumour]
   shell:
     "{config[module_samtools]} && "
+    #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} 2>{log}"
     "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
 #######
