@@ -450,10 +450,10 @@ rule gatk_genotype_hc_indels:
     "log/{germline}.hc.gt.indels.log"
   shell:
     "({config[module_java]} && "
-    #"tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} -stand-call-conf 2 -stand_emit_conf 2 -A BaseQualityRankSumTest -A ClippingRankSumTest -A Coverage -A FisherStrand -A MappingQuality -A RMSMappingQuality -A ReadPosRankSumTest -A StrandOddsRatio -A TandemRepeatAnnotator --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcfindel}"
     "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V {input.vcf} -L {input.regions} --use-new-qual-calculator true --output {output.tmp_vcf} && "
     "tools/gatk-4.1.2.0/gatk SelectVariants -R {input.reference} -V {output.tmp_vcf} -o {output.tmp_vcfindel} --select-type-to-include INDEL --min-indel-size 10 && "
-    "bgzip -c {output.tmp_vcfindel} > {output.vcfindel} ") 2>{log}"
+    "bgzip -c {output.tmp_vcfindel} > {output.vcfindel}"
+    ") 2>{log}"
 
 rule gatk_joint_genotype:
   input:
