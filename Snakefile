@@ -451,7 +451,7 @@ rule gatk_genotype_hc_indels:
   shell:
     "({config[module_java]} && "
     "tools/gatk-4.1.2.0/gatk GenotypeGVCFs -R {input.reference} --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -V {input.vcf} -L {input.regions} --use-new-qual-calculator true --output {output.tmp_vcf} && "
-    "tools/gatk-4.1.2.0/gatk SelectVariants -R {input.reference} -V {output.tmp_vcf} -o {output.tmp_vcfindel} --select-type-to-include INDEL --min-indel-size 10 && "
+    "tools/gatk-4.1.2.0/gatk SelectVariants -R {input.reference} -V {output.tmp_vcf} --output {output.tmp_vcfindel} --select-type-to-include INDEL --min-indel-size 19 && "
     "bgzip -c {output.tmp_vcfindel} > {output.vcfindel}"
     ") 2>{log}"
 
