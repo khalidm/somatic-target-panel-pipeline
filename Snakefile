@@ -431,7 +431,7 @@ rule gatk_haplotype_caller:
     "tools/gatk-4.1.2.0/gatk BaseRecalibrator --input {input.bam} --output {output.recal} -R {input.reference} --known-sites reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/Mills_and_1000G_gold_standard.indels.b37.vcf.bgz --known-sites reference/gatk-4-bundle-b37/1000G_phase1.indels.b37.vcf.bgz && "
     "tools/gatk-4.1.2.0/gatk ApplyBQSR -R {input.reference} -I {input.bam} -bqsr {output.recal} -O {output.bqsr} && "
     "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcf} && "
-    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} -stand-call-conf 2 -stand_emit_conf 2 -A BaseQualityRankSumTest -A ClippingRankSumTest -A Coverage -A FisherStrand -A MappingQuality -A RMSMappingQuality -A ReadPosRankSumTest -A StrandOddsRatio -A TandemRepeatAnnotator --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcfindel}"
+    "tools/gatk-4.1.2.0/gatk HaplotypeCaller -R {input.reference} -I {output.bqsr} -L {input.regions} -stand-call-conf 2 --output-mode EMIT_ALL_CONFIDENT_SITES -A BaseQualityRankSumTest -A ClippingRankSumTest -A Coverage -A FisherStrand -A MappingQuality -A RMSMappingQuality -A ReadPosRankSumTest -A StrandOddsRatio -A TandemRepeatAnnotator --emit-ref-confidence GVCF --dbsnp reference/gatk-4-bundle-b37/dbsnp_138.b37.vcf.bgz -O {output.gvcfindel}"
     ") 2>{log}"
 
 rule gatk_genotype_hc_indels:
