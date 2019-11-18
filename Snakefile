@@ -273,7 +273,7 @@ rule mosdepth_exon:
 
 rule peddy:
   input:
-    vcf="out/germline_joint.hc.normalized.vcf",
+    vcf="out/aggregate/germline_joint.hc.normalized.vep.vcf.gz",
     reference=config['genome'],
     ped=config['ped']
     # bam="out/{sample}.sorted.dups.bam",
@@ -596,6 +596,8 @@ rule strelka_somatic:
 
   shell:
     "(mkdir -p tmp/strelka_{wildcards.tumour}_$$ && "
+    "{config[module_intel]} && "
+    "{config[module_python2]} && "
     "python2 tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py "
     "--ref {input.reference} "
     "--tumorBam {input.bams[0]} "
