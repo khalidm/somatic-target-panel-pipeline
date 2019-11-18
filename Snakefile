@@ -284,7 +284,8 @@ rule peddy:
   #   prefix="out/mosdepth_exons/{sample}_exons"
   shell:
     "{config[module_R]} && "
-    "peddy --plot -p 2 --prefix mystudy {input.vcf} {input.ped} && "
+    #"peddy --plot -p 2 --prefix mystudy {input.vcf} {input.ped} && "
+    "peddy --plot --prefix out/peddy/mystudy {input.vcf} {input.ped} && "
     "touch {output}"
 
 rule multiqc:
@@ -598,7 +599,7 @@ rule strelka_somatic:
     "(mkdir -p tmp/strelka_{wildcards.tumour}_$$ && "
     "{config[module_intel]} && "
     "{config[module_python2]} && "
-    "python2 tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py "
+    "tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py "
     "--ref {input.reference} "
     "--tumorBam {input.bams[0]} "
     "--normalBam {input.bams[1]} "
