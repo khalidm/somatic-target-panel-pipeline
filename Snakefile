@@ -1073,7 +1073,7 @@ rule filter_maf:
   log:
     stderr="log/{tumour}.filter.maf.log"
   shell:
-    "python src/filter_maf.py --maf {intput.maf} 2>{log}"
+    "python src/filter_maf.py --maf {input.maf} 2>{log}"
 
 rule maf_vaf_plot:
   input:
@@ -1083,7 +1083,7 @@ rule maf_vaf_plot:
   log:
     stderr="log/{tumour}.maf.vaf.log"
   shell:
-    "python src/plot_vaf.py --maf {intput.maf} --sample {wildcards.tumour} --target {output.maf_vaf_plot} --vaf 0.1 2>{log}"
+    "python src/plot_vaf.py --maf {input.maf} --sample {wildcards.tumour} --target {output.maf_vaf_plot} --vaf 0.1 2>{log}"
 #######
 #######
 #######
