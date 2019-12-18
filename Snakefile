@@ -60,15 +60,24 @@ rule all:
     expand("out/{sample}.metrics.alignment", sample=config['samples']),
     expand("out/{sample}.metrics.target", sample=config['samples']),
     expand("out/{tumour}.mutect2.filter.norm.af.dp.filter.vep.vcf.gz", tumour=config['tumours']),
-    expand("out/maf/{tumour}.intersect.maf", tumour=config['tumours']),
+    expand("out/{tumour}.loh.bed", tumour=samples['tumours']), # loh regions
+
+    expand("tmp/{tumour}.intersect.vep.vcf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.maf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.mmr.maf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.pol.maf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.braf_kras.maf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.other.maf", tumour=config['tumours']),
+    expand("out/mafs/{tumour}.intersect.vaf.png", tumour=config['tumours']),
+
     # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
     # msi
     "out/aggregate/msisensor.tsv",
 
     # combined results
-    "out/aggregate/mutect2.genes_of_interest.combined.tsv",
-    "out/aggregate/mutect2.combined.tsv",
+    #"out/aggregate/mutect2.genes_of_interest.combined.tsv",
+    #"out/aggregate/mutect2.combined.tsv",
     "out/aggregate/mutational_signatures.combined",
     "out/aggregate/mutational_signatures.filter.combined",
 
@@ -284,7 +293,7 @@ rule peddy:
   #   prefix="out/mosdepth_exons/{sample}_exons"
   shell:
     "{config[module_R]} && "
-    #"peddy --plot -p 2 --prefix mystudy {input.vcf} {input.ped} && "
+    #"peddy --plot -p 2 --prefix out/peddy/mystudy {input.vcf} {input.ped} && "
     "peddy --plot --prefix out/peddy/mystudy {input.vcf} {input.ped} && "
     "touch {output}"
 
@@ -960,7 +969,7 @@ rule annotate_afdp_mutect2_filter:
     "{config[module_samtools]} && "
     "{config[module_htslib]} && "
     "tools/vt-0.577/vt decompose -s {input.vcf} | tools/vt-0.577/vt normalize -n -r {input.reference} - -o out/{wildcards.tumour}.mutect2.filter.norm.vcf.gz && "
-    "src/annotate_dp_vaf_mutect2.py out/{wildcards.tumour}.mutect2.filter.norm.vcf.gz | bgzip >{output} 2>{log.stderr}"
+    "src/annotate_dp_vaf_mutect2.py {wildcards.tumour} out/{wildcards.tumour}.mutect2.filter.norm.vcf.gz | bgzip >{output} 2>{log.stderr}"
 
 rule mutect2_vt_filter:
   input:
@@ -1005,11 +1014,12 @@ rule annotate_vep_germline:
 rule intersect_somatic_callers:
   input:
     reference=config["genome"],
-    mutect2="out/{tumour}.mutect2.filter.norm.af.dp.filter.vcf.gz",
-    strelka_snvs="out/{tumour}.strelka.somatic.snvs.af.dp.filtered.vcf.gz",
-    strelka_indels="out/{tumour}.strelka.somatic.indels.af.dp.filtered.vcf.gz"
+    mutect2="out/{tumour}.mutect2.filter.norm.af.dp.vcf.gz",
+    strelka_snvs="out/{tumour}.strelka.somatic.snvs.af.dp.vcf.gz",
+    strelka_indels="out/{tumour}.strelka.somatic.indels.af.dp.vcf.gz"
   output:
-    "out/{tumour}.intersect.vcf.gz"
+    "out/{tumour}.intersect.vcf.gz",
+    "tmp/{tumour}.intersect.vcf"
   log:
     stderr="log/{tumour}.intersect.log"
   shell:
@@ -1022,7 +1032,8 @@ rule intersect_somatic_callers:
     "python src/vcf_intersect.py --allowed_filters str_contraction LowDepth --inputs {input.strelka_indels} {input.mutect2} | sed -n '/^#/!p' >> tmp/{wildcards.tumour}.intersect.unsorted.vcf && "
     "grep '^#' tmp/{wildcards.tumour}.intersect.unsorted.vcf > tmp/{wildcards.tumour}.intersect.vcf && "
     "bedtools sort < tmp/{wildcards.tumour}.intersect.unsorted.vcf >> tmp/{wildcards.tumour}.intersect.vcf && "
-    "bgzip < tmp/{wildcards.tumour}.intersect.vcf > {output}"
+    "src/vtfilter.sh tmp/{wildcards.tumour}.intersect.vcf tmp/{wildcards.tumour}.intersect.filter.vcf {config[af_threshold]} {config[depth_n]} {config[depth_t]} && "
+    "bgzip < tmp/{wildcards.tumour}.intersect.filter.vcf > {output[0]}"
     " 2>{log.stderr}"
 
 #######
@@ -1031,11 +1042,12 @@ rule intersect_somatic_callers:
 rule intersect_to_maf:
   input:
     vcf="out/{tumour}.intersect.vcf.gz",
+    vcf_unfiltered="tmp/{tumour}.intersect.vcf",
     reference=config['genome'],
     bams=tumour_germline_dup_bams
   output:
-    vep="out/maf/{tumour}.intersect.vep.vcf",
-    maf="out/maf/{tumour}.intersect.maf"
+    vep="tmp/{tumour}.intersect.vep.vcf",
+    maf="out/mafs/{tumour}.intersect.maf"
   log:
     stderr="log/{tumour}.intersect.maf.log"
   params:
@@ -1043,10 +1055,33 @@ rule intersect_to_maf:
     #germline=germline_sample
     germline=lambda wildcards: samples["tumours"][wildcards.tumour]
   shell:
-    "{config[module_samtools]} && "
+    #"{config[module_samtools]} && "
+    "{config[module_perl]} && "
+    "{config[module_intel]} && "
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} 2>{log}"
-    "src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
+    "src/vcf_to_maf.sh {input.vcf_unfiltered} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
+
+rule filter_maf:
+  input:
+    maf = "out/mafs/{tumour}.intersect.maf",
+  output:
+    maf_mmr = "out/mafs/{tumour}.intersect.mmr.maf",
+    maf_pol = "out/mafs/{tumour}.intersect.pol.maf",
+    maf_braf_kras = "out/mafs/{tumour}.intersect.braf_kras.maf",
+    maf_other = "out/mafs/{tumour}.intersect.other.maf",
+  log:
+  shell:
+    "python src/filter_maf.py --maf {intput.maf}"
+
+rule maf_vaf_plot:
+  input:
+    maf = "out/mafs/{tumour}.intersect.maf",
+  output:
+    maf_vaf_plot = "out/mafs/{tumour}.intersect.vaf.png",
+  log:
+  shell:
+    "python src/plot_vaf.py --maf {intput.maf} --sample {wildcards.tumour} --target {output.maf_vaf_plot} --vaf 0.1"
 #######
 #######
 #######
