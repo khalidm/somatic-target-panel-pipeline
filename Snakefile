@@ -1071,8 +1071,9 @@ rule filter_maf:
     maf_braf_kras = "out/mafs/{tumour}.intersect.braf_kras.maf",
     maf_other = "out/mafs/{tumour}.intersect.other.maf",
   log:
+    stderr="log/{tumour}.filter.maf.log"
   shell:
-    "python src/filter_maf.py --maf {intput.maf}"
+    "python src/filter_maf.py --maf {intput.maf} 2>{log}"
 
 rule maf_vaf_plot:
   input:
@@ -1080,8 +1081,9 @@ rule maf_vaf_plot:
   output:
     maf_vaf_plot = "out/mafs/{tumour}.intersect.vaf.png",
   log:
+    stderr="log/{tumour}.maf.vaf.log"
   shell:
-    "python src/plot_vaf.py --maf {intput.maf} --sample {wildcards.tumour} --target {output.maf_vaf_plot} --vaf 0.1"
+    "python src/plot_vaf.py --maf {intput.maf} --sample {wildcards.tumour} --target {output.maf_vaf_plot} --vaf 0.1 2>{log}"
 #######
 #######
 #######
