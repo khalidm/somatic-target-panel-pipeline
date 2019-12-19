@@ -939,6 +939,20 @@ rule annotate_vep_intersect:
     "{config[module_samtools]} && "
     "src/annotate.sh {input.vcf} {output} {input.reference} {params.cores} 2>{log}"
 
+rule annotate_vardict:
+  input:
+    vcf="out/{tumour}.vardict.vcf",
+    reference=config['genome']
+  output:
+    "out/{tumour}.vardict.annotated.vcf.gz"
+  log:
+    "log/{tumour}.vardict.annotate.log"
+  params:
+    cores=cluster["annotate_vardict"]["n"]
+  shell:
+    "{config[module_samtools]} && "
+    "src/annotate.sh {input.vcf} {output} {input.reference} {params.cores} 2>{log}"
+
 #rule annotate_vep_mutect2:
 #  input:
 #    vcf="out/{tumour}.mutect2.filter.vcf.gz",
@@ -1235,7 +1249,7 @@ rule msisensor_prep:
 rule msisensor:
   input:
     microsatellites="out/msisensor.list",
-    bed=config["regions"],
+    bed=config["regions_msi"],
     bams=tumour_germline_bams
   output:
     "out/{tumour}.msisensor.tsv"
