@@ -70,6 +70,8 @@ rule all:
     expand("out/mafs/{tumour}.intersect.other.maf", tumour=config['tumours']),
     expand("out/mafs/{tumour}.intersect.vaf.png", tumour=config['tumours']),
 
+    expand("out/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
+
     # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
     # msi
@@ -1244,7 +1246,7 @@ rule msisensor_prep:
   log:
     stderr="log/msisensor.list.log"
   shell:
-    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux scan -d {input.reference} -o {output}"
+    "tools/msisensor-{config[msisensor_version]}/binary/msisensor.linux scan -d {input.reference} -l 8 -m 35 -o {output}"
 
 rule msisensor:
   input:
