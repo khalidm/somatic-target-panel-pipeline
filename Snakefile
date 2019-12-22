@@ -946,14 +946,20 @@ rule annotate_vardict:
     vcf="out/{tumour}.vardict.vcf",
     reference=config['genome']
   output:
-    "out/{tumour}.vardict.annotated.vcf.gz"
+    tmp="tmp/{tumour}.vardict.filtered.vcf",
+    vcf="out/{tumour}.vardict.annotated.vcf.gz",
   log:
     "log/{tumour}.vardict.annotate.log"
   params:
     cores=cluster["annotate_vardict"]["n"]
   shell:
     "{config[module_samtools]} && "
-    "src/annotate.sh {input.vcf} {output} {input.reference} {params.cores} 2>{log}"
+    #vt view -h -f "PASS&&INFO.AF>0.07&&INFO.STATUS!='Germline'" 0636321001_T.vardict.annotated.vcf.gz
+    # "vt view -h -f "PASS&&INFO.AF>0.07&&INFO.STATUS!='Germline'" {input.vcf} "
+    # "src/annotate.sh {input.vcf} {output.vcf} {input.reference} {params.cores} 2>{log}"
+    "vt view -h -f \"PASS&&INFO.AF>{config[af_threshold]}&&INFO.STATUS!='Germline'\" {input.vcf} -o {output.tmp} &&"
+    "src/annotate.sh {output.tmp} {output.vcf} {input.reference} {params.cores} 2>{log} &&"
+    "rm {output.tmp}"
 
 #rule annotate_vep_mutect2:
 #  input:
