@@ -45,7 +45,7 @@ def germline_sample(wildcards):
 ### final outputs ###
 rule all:
   input:
-    expand("out/{tumour}.vardict.vcf", tumour=config['tumours']),
+    expand("out/vardict/{tumour}.vardict.vcf", tumour=config['tumours']),
     expand("out/{tumour}.strelka.somatic.snvs.af.dp.filtered.vep.vcf.gz", tumour=config['tumours']), # somatic snvs strelka
     expand("out/{tumour}.strelka.somatic.indels.af.dp.filtered.vep.vcf.gz", tumour=config['tumours']), # somatic indels strelka
     expand("out/{sample}.oxo_metrics.txt", sample=config['samples']),
@@ -70,7 +70,7 @@ rule all:
     expand("out/mafs/{tumour}.intersect.other.maf", tumour=config['tumours']),
     expand("out/mafs/{tumour}.intersect.vaf.png", tumour=config['tumours']),
 
-    expand("out/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
+    expand("out/vardict/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
 
     # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
@@ -944,11 +944,11 @@ rule annotate_vep_intersect:
 
 rule annotate_vardict:
   input:
-    vcf="out/{tumour}.vardict.vcf",
+    vcf="out/vardict/{tumour}.vardict.vcf",
     reference=config['genome']
   output:
     tmp="tmp/{tumour}.vardict.filtered.vcf",
-    vcf="out/{tumour}.vardict.annotated.vcf.gz",
+    vcf="out/vardict/{tumour}.vardict.annotated.vcf.gz",
   log:
     "log/{tumour}.vardict.annotate.log"
   params:
@@ -1225,7 +1225,7 @@ rule vardict:
     bed=config["regions"]
     # interval=rules.genome_interval.output
   output:
-    "out/{tumour}.vardict.vcf"
+    "out/vardict/{tumour}.vardict.vcf"
   params:
     cores=cluster["vardict"]["n"],
     # mem=cluster["mem"]["n"]
@@ -1394,7 +1394,7 @@ rule mutation_burden:
 
 rule mutation_burden_vardict:
   input:
-    vcfs=expand("out/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
+    vcfs=expand("out/vardict/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
     regions=config["regions"],
   output:
     "out/aggregate/mutation_rate_vardict.tsv"
