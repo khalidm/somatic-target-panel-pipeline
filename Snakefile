@@ -100,6 +100,7 @@ rule all:
     "out/aggregate/ontarget_tumour.png", # somatic ontarget coverage plots
     "out/aggregate/ontarget_germline.png", # germline ontarget coverage plots
     "out/aggregate/mutation_rate.tsv",
+    "out/aggregate/mutation_rate_vardict.tsv",
     "out/aggregate/msi_burden.tsv",
 
 ### aggregate ###
@@ -1388,6 +1389,17 @@ rule mutation_burden:
     "out/aggregate/mutation_rate.tsv"
   log:
     stderr="log/mutation_rate.stderr"
+  shell:
+    "src/mutation_rate.py --verbose --vcfs {input.vcfs} --bed {input.regions} >{output} 2>{log.stderr}"
+
+rule mutation_burden_vardict:
+  input:
+    vcfs=expand("out/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
+    regions=config["regions"],
+  output:
+    "out/aggregate/mutation_rate_vardict.tsv"
+  log:
+    stderr="log/mutation_rate_vardict.stderr"
   shell:
     "src/mutation_rate.py --verbose --vcfs {input.vcfs} --bed {input.regions} >{output} 2>{log.stderr}"
 
