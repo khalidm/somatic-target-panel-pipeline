@@ -1089,7 +1089,7 @@ rule intersect_to_maf:
 rule vardict_to_maf:
   input:
     vcf="out/vardict/{tumour}.vardict.annotated.vcf.gz",
-    vcf_unfiltered="tmp/{tumour}.vardict.filtered.vcf",
+    vcf_filtered="tmp/{tumour}.vardict.filtered.vcf",
     reference=config['genome'],
     #bams=tumour_germline_dup_bams
   output:
@@ -1106,7 +1106,7 @@ rule vardict_to_maf:
     "{config[module_perl]} && "
     "{config[module_intel]} && "
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} 2>{log}"
-    "src/vcf_to_maf.sh {input.vcf_unfiltered} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
+    "src/vcf_to_maf.sh {input.vcf_filtered} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
     #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
 
 rule filter_maf:
