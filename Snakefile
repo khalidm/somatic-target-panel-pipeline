@@ -71,6 +71,7 @@ rule all:
     expand("out/mafs/{tumour}.intersect.vaf.png", tumour=config['tumours']),
 
     expand("out/vardict/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
+    expand("out/vardict/{tumour}.vardict.maf", tumour=config['tumours']),
 
     # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
@@ -1075,6 +1076,29 @@ rule intersect_to_maf:
     stderr="log/{tumour}.intersect.maf.log"
   params:
     cores=cluster["annotate_vep_intersect"]["n"],
+    #germline=germline_sample
+    germline=lambda wildcards: samples["tumours"][wildcards.tumour]
+  shell:
+    #"{config[module_samtools]} && "
+    "{config[module_perl]} && "
+    "{config[module_intel]} && "
+    #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {wildcards.tumour} 2>{log}"
+    "src/vcf_to_maf.sh {input.vcf_unfiltered} {output.vep} {input.reference} {output.maf} {wildcards.tumour} {params.germline} 2>{log}"
+    #"src/vcf_to_maf.sh {input.vcf} {output.vep} {input.reference} {output.maf} {params.cores} 2>{log}"
+
+rule vardict_to_maf:
+  input:
+    vcf="out/vardict/{tumour}.vardict.annotated.vcf.gz",
+    vcf_unfiltered="tmp/{tumour}.vardict.filtered.vcf",
+    reference=config['genome'],
+    #bams=tumour_germline_dup_bams
+  output:
+    vep="tmp/{tumour}.vardict.filtered.vep.vcf",
+    maf="out/vardict/{tumour}.vardict.maf"
+  log:
+    stderr="log/{tumour}.vardict.maf.log"
+  params:
+    cores=cluster["annotate_vardict"]["n"],
     #germline=germline_sample
     germline=lambda wildcards: samples["tumours"][wildcards.tumour]
   shell:
