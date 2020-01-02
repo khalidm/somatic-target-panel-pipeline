@@ -426,6 +426,17 @@ rule gatk_duplicates:
     "{config[module_java]} && "
     "java -jar tools/picard-2.8.2.jar MarkDuplicates INPUT={input} OUTPUT={output[0]} METRICS_FILE={output[2]} VALIDATION_STRINGENCY=LENIENT ASSUME_SORTED=True CREATE_INDEX=True MAX_RECORDS_IN_RAM=2000000"
 
+# index bam file
+rule index_bam_file:
+  input:
+    "out/{sample}.sorted.dups.bam"
+  output:
+    "out/{sample}.sorted.dups.bam.bai"
+  log:
+    "log/{sample}.bamindex.stderr"
+  shell:
+    "samtools index {input} {output}"
+
 ### germline variant calling ###
 rule gatk_haplotype_caller:
   input:
@@ -1301,6 +1312,20 @@ rule msisensor_combine:
     "out/aggregate/msisensor.tsv"
   shell:
     "src/combine_msisensor.py {input} > {output}"
+
+# MANTIS (Microsatellite Analysis for Normal-Tumor InStability)
+rule mantis:
+  input:
+    reference=config["genome"],
+    bams=tumour_germline_bams
+  output:
+    "tmp/msisensor.tsv"
+  log:
+    stderr="log/{tumour}.mantis.stderr"
+  params:
+    tumour="{tumour}"
+  shell:
+    "python mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis"
 
 # mutational signatures
 rule mutational_signature:
