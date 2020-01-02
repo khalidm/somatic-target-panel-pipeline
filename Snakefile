@@ -77,6 +77,7 @@ rule all:
 
     # msi
     "out/aggregate/msisensor.tsv",
+    "out/aggregate/mantis.tsv",
 
     # combined results
     #"out/aggregate/mutect2.genes_of_interest.combined.tsv",
@@ -1319,13 +1320,23 @@ rule mantis:
     reference=config["genome"],
     bams=tumour_germline_bams
   output:
-    "tmp/msisensor.tsv"
+    # "out/{tumour}.mantis.tsv"
+    "out/aggregate/mantis.tsv"
   log:
     stderr="log/{tumour}.mantis.stderr"
   params:
     tumour="{tumour}"
   shell:
-    "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis"
+    "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis && "
+    "grep '^Step-Wise' tmp/{params.tumour}.mantis.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output}"
+
+# rule mantis_combine:
+#   input:
+#     expand("tmp/{tumour}.mantis.tsv", tumour=config['tumours']),
+#   output:
+#     "out/aggregate/mantis.tsv"
+#   shell:
+#     "src/combine_msisensor.py {input} > {output}"
 
 # mutational signatures
 rule mutational_signature:
