@@ -1325,7 +1325,7 @@ rule mantis:
   params:
     tumour="{tumour}"
   shell:
-    "python mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis"
+    "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis"
 
 # mutational signatures
 rule mutational_signature:
