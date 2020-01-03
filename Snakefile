@@ -77,7 +77,8 @@ rule all:
 
     # msi
     "out/aggregate/msisensor.tsv",
-    "out/aggregate/mantis.tsv",
+    expand("out/{tumour}.manis.status", tumour=config['tumours']),
+    # "out/aggregate/mantis.tsv",
 
     # combined results
     #"out/aggregate/mutect2.genes_of_interest.combined.tsv",
@@ -1322,7 +1323,8 @@ rule mantis:
   output:
     # "out/{tumour}.mantis.tsv"
     tmp="tmp/{tumour}.mantis",
-    tsv="out/aggregate/mantis.tsv"
+    tsv="out/{tumour}.mantis.status"
+    # tsv="out/aggregate/mantis.tsv"
   log:
     stderr="log/{tumour}.mantis.stderr"
   params:
@@ -1331,7 +1333,8 @@ rule mantis:
     # "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis && "
     # "grep '^Step-Wise' tmp/{params.tumour}.mantis.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output}"
     "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o {output.tmp} && "
-    "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output.tsv}"
+    "mv {output.tmp}.status {output.tsv}"
+    # "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output.tsv}"
 
 # rule mantis_combine:
 #   input:
