@@ -1321,7 +1321,7 @@ rule msisensor_combine:
 rule mantis:
   input:
     reference=config["genome"],
-    bed=config["regions_mantis"]
+    bed=config["regions_mantis"],
     bams=tumour_germline_bams
   output:
     # "out/{tumour}.mantis.tsv"
@@ -1336,16 +1336,17 @@ rule mantis:
     # "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis && "
     # "grep '^Step-Wise' tmp/{params.tumour}.mantis.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output}"
     "python tools/MANTIS-master/mantis.py --bedfile {input.bed} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o {output.tmp} && "
-    "mv {output.tmp}.status {output.tsv}"
+    "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} {print \"Sample\tstep-wise\n\"{params.tumour}\"\t\"$2}' > {output.tsv}"
+    # "mv {output.tmp}.status {output.tsv}"
     # "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output.tsv}"
 
-# rule mantis_combine:
-#   input:
-#     expand("tmp/{tumour}.mantis.tsv", tumour=config['tumours']),
-#   output:
-#     "out/aggregate/mantis.tsv"
-#   shell:
-#     "src/combine_msisensor.py {input} > {output}"
+rule mantis_combine:
+  input:
+    expand("out/{tumour}.mantis.status", tumour=config['tumours']),
+  output:
+    "out/aggregate/mantis.tsv"
+  shell:
+    "src/combine_mantis.py {input} > {output}"
 
 # mutational signatures
 rule mutational_signature:
