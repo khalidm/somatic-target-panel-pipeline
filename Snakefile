@@ -1336,8 +1336,9 @@ rule mantis:
     # "python tools/MANTIS-master/mantis.py --bedfile {config[msisensor_version]} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o tmp/{params.tumour}.mantis && "
     # "grep '^Step-Wise' tmp/{params.tumour}.mantis.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output}"
     "python tools/MANTIS-master/mantis.py --bedfile {input.bed} --genome {input.reference} -n {input.bams[1]} -t {input.bams[0]} -o {output.tmp} && "
-    "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} {print \"Sample\tstep-wise\n\"{params.tumour}\"\t\"$2}' > {output.tsv}"
+    "grep '^Step-Wise' {output.tmp}.status > {output.tsv} "
     # "mv {output.tmp}.status {output.tsv}"
+    # "mv {output.tmp}.status {output.tsv} "
     # "grep '^Step-Wise' {output.tmp}.status | awk 'BEGIN {FS=\"\t\"; OFS=\"\t\"} { print {params.tumour}\"\t\"$2 }' >> {output.tsv}"
 
 rule mantis_combine:
