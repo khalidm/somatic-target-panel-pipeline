@@ -73,11 +73,13 @@ rule all:
     expand("out/vardict/{tumour}.vardict.annotated.vcf.gz", tumour=config['tumours']),
     expand("out/vardict/{tumour}.vardict.maf", tumour=config['tumours']),
 
+    expand("out/{sample}.sorted.dups.bam.bai", sample=config['samples']),
+
     # expand("out/{tumour}.mutect2_no_pon.vcf.gz", tumour=config['tumours']),
 
     # msi
     "out/aggregate/msisensor.tsv",
-    expand("out/{tumour}.manis.status", tumour=config['tumours']),
+    expand("out/{tumour}.mantis.status", tumour=config['tumours']),
     # "out/aggregate/mantis.tsv",
 
     # combined results
